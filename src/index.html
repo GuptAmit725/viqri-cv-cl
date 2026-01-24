@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viqri CV - AI-Powered CV Optimizer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">V</span>
+                <span class="logo-text">Viqri CV</span>
+            </div>
+            <p class="tagline">AI-Powered CV Optimization</p>
+        </header>
+
+        <!-- Step 1: Upload CV -->
+        <main class="upload-section" id="uploadSection">
+            <div class="upload-card">
+                <div class="upload-header">
+                    <h1 class="title">Upload Your CV</h1>
+                    <p class="subtitle">Step 1: Let's analyze your current CV</p>
+                </div>
+
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="fileInput" accept=".pdf,.doc,.docx" hidden>
+                    
+                    <div class="upload-content" id="uploadContent">
+                        <div class="upload-icon">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                        </div>
+                        <p class="upload-text">Drop your CV here</p>
+                        <p class="upload-subtext">or click to browse</p>
+                        <div class="upload-formats">
+                            <span class="format-badge">PDF</span>
+                            <span class="format-badge">DOC</span>
+                            <span class="format-badge">DOCX</span>
+                        </div>
+                    </div>
+
+                    <div class="upload-progress" id="uploadProgress" style="display: none;">
+                        <div class="progress-icon">
+                            <div class="spinner"></div>
+                        </div>
+                        <p class="progress-text">Analyzing CV...</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <p class="progress-percentage" id="progressPercentage">0%</p>
+                    </div>
+
+                    <div class="upload-success" id="uploadSuccess" style="display: none;">
+                        <div class="success-icon">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                        <p class="success-text">CV Analyzed!</p>
+                        <p class="success-filename" id="successFilename"></p>
+                    </div>
+                </div>
+
+                <div class="file-info" id="fileInfo" style="display: none;">
+                    <div class="file-details">
+                        <div class="file-icon">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                                <polyline points="13 2 13 9 20 9"/>
+                            </svg>
+                        </div>
+                        <div class="file-meta">
+                            <p class="file-name" id="fileName"></p>
+                            <p class="file-size" id="fileSize"></p>
+                        </div>
+                        <button class="btn-remove" id="removeFile">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="submitBtn" style="display: none;">
+                    <span>Analyze CV</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                </button>
+            </div>
+        </main>
+
+        <!-- Step 2: Job Details Form -->
+        <section class="job-details-section" id="jobDetailsSection" style="display: none;">
+            <div class="job-details-card">
+                <div class="section-header">
+                    <h2 class="section-title">Step 2: Tell Us About Your Target Role</h2>
+                    <p class="section-subtitle">We'll optimize your CV for this specific opportunity</p>
+                </div>
+
+                <form class="job-form" id="jobForm">
+                    <div class="form-group">
+                        <label for="targetJob">Target Job Title *</label>
+                        <input type="text" id="targetJob" placeholder="e.g., Senior Software Engineer" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="targetLocation">Target Location *</label>
+                        <input type="text" id="targetLocation" placeholder="e.g., San Francisco, CA" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="industry">Industry (Optional)</label>
+                        <select id="industry">
+                            <option value="">Select industry...</option>
+                            <option value="Technology">Technology</option>
+                            <option value="Finance">Finance</option>
+                            <option value="Healthcare">Healthcare</option>
+                            <option value="Education">Education</option>
+                            <option value="Retail">Retail</option>
+                            <option value="Manufacturing">Manufacturing</option>
+                            <option value="Consulting">Consulting</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="experienceLevel">Experience Level (Optional)</label>
+                        <select id="experienceLevel">
+                            <option value="">Select level...</option>
+                            <option value="entry">Entry Level (0-2 years)</option>
+                            <option value="mid">Mid Level (3-5 years)</option>
+                            <option value="senior">Senior Level (6-10 years)</option>
+                            <option value="lead">Lead/Principal (10+ years)</option>
+                            <option value="executive">Executive</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        <span>Generate Optimized Template</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Step 3: Results -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="results-card">
+                <div class="section-header">
+                    <h2 class="section-title">🎉 Your Optimized CV Strategy</h2>
+                    <p class="section-subtitle">AI-powered recommendations tailored for your target role</p>
+                </div>
+
+                <div class="results-loading" id="resultsLoading">
+                    <div class="spinner"></div>
+                    <p>AI is analyzing your CV and generating recommendations...</p>
+                </div>
+
+                <div class="results-content" id="resultsContent" style="display: none;">
+                    <!-- Results will be dynamically inserted here -->
+                </div>
+
+                <div class="results-actions">
+                    <button class="btn-secondary" id="startOverBtn">
+                        Start Over
+                    </button>
+                    <button class="btn-primary" id="downloadBtn" style="display: none;">
+                        Download Report
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>&copy; 2025 Viqri CV. Powered by AI.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

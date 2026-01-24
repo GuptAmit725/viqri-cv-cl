@@ -43,13 +43,6 @@ class LLMCVExtractor:
             chat_completion = self.client.chat.completions.create(
                 messages=[
                     {
-                        "role": "system",
-                        "content": """You are a CV parser that returns ONLY valid JSON. 
-                        Your response must be pure JSON with no additional text, explanations, or markdown formatting.
-                        Start with { and end with }. Never include code blocks (```json) or any text outside the JSON object.
-                        Extract information accurately from CVs and structure it according to the provided schema."""
-                    },
-                    {
                         "role": "user",
                         "content": prompt
                     }

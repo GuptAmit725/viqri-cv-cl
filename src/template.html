@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Optimized CV Template - Viqri CV</title>
+    <link rel="stylesheet" href="template-styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="template-container">
+        <!-- Header -->
+        <header class="template-header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">V</span>
+                    <span class="logo-text">Viqri CV</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-secondary" id="backBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="19" y1="12" x2="5" y2="12"/>
+                            <polyline points="12 19 5 12 12 5"/>
+                        </svg>
+                        Back
+                    </button>
+                    <button class="btn-secondary" id="editBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Edit Template
+                    </button>
+                    <button class="btn-primary" id="downloadBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Download PDF
+                    </button>
+                    <button class="btn-primary" id="printBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 6 2 18 2 18 9"/>
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                            <rect x="6" y="14" width="12" height="8"/>
+                        </svg>
+                        Print
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="template-main">
+            <!-- Sidebar Navigation -->
+            <aside class="template-sidebar">
+                <nav class="sidebar-nav">
+                    <h3>Recommendations</h3>
+                    <ul>
+                        <li><a href="#overview" class="nav-link active">Overview</a></li>
+                        <li><a href="#structure" class="nav-link">Template Structure</a></li>
+                        <li><a href="#content" class="nav-link">Content Tips</a></li>
+                        <li><a href="#location" class="nav-link">Location Insights</a></li>
+                        <li><a href="#industry" class="nav-link">Industry Trends</a></li>
+                        <li><a href="#actions" class="nav-link">Action Items</a></li>
+                        <li><a href="#preview" class="nav-link">CV Preview</a></li>
+                    </ul>
+                </nav>
+
+                <div class="sidebar-info">
+                    <h4>Target Position</h4>
+                    <p class="info-value" id="targetJobDisplay">Loading...</p>
+                    
+                    <h4>Location</h4>
+                    <p class="info-value" id="targetLocationDisplay">Loading...</p>
+                    
+                    <h4>Industry</h4>
+                    <p class="info-value" id="industryDisplay">Not specified</p>
+                    
+                    <h4>Experience Level</h4>
+                    <p class="info-value" id="experienceDisplay">Not specified</p>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="template-content">
+                <!-- Loading State -->
+                <div class="loading-state" id="loadingState">
+                    <div class="spinner-large"></div>
+                    <p>Loading your optimized template...</p>
+                </div>
+
+                <!-- Content Sections -->
+                <div class="content-sections" id="contentSections" style="display: none;">
+                    
+                    <!-- Overview -->
+                    <section id="overview" class="content-section">
+                        <div class="section-icon">🎯</div>
+                        <h2>Your Personalized CV Strategy</h2>
+                        <p class="section-intro">Based on AI analysis of your CV and target role, here's your comprehensive optimization strategy.</p>
+                        
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-number" id="keySkillsCount">0</div>
+                                <div class="stat-label">Key Skills to Highlight</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="missingSkillsCount">0</div>
+                                <div class="stat-label">Skills to Add</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="actionItemsCount">0</div>
+                                <div class="stat-label">Action Items</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="keywordsCount">0</div>
+                                <div class="stat-label">ATS Keywords</div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Template Structure -->
+                    <section id="structure" class="content-section">
+                        <div class="section-icon">📋</div>
+                        <h2>Recommended Template Structure</h2>
+                        <div id="structureContent"></div>
+                    </section>
+
+                    <!-- Content Recommendations -->
+                    <section id="content" class="content-section">
+                        <div class="section-icon">✨</div>
+                        <h2>Content Recommendations</h2>
+                        <div id="contentRecommendations"></div>
+                    </section>
+
+                    <!-- Location Specific -->
+                    <section id="location" class="content-section">
+                        <div class="section-icon">🌍</div>
+                        <h2>Location-Specific Insights</h2>
+                        <div id="locationContent"></div>
+                    </section>
+
+                    <!-- Industry Insights -->
+                    <section id="industry" class="content-section">
+                        <div class="section-icon">💼</div>
+                        <h2>Industry Insights</h2>
+                        <div id="industryContent"></div>
+                    </section>
+
+                    <!-- Action Items -->
+                    <section id="actions" class="content-section">
+                        <div class="section-icon">🎯</div>
+                        <h2>Your Action Plan</h2>
+                        <div id="actionItemsContent"></div>
+                    </section>
+
+                    <!-- CV Preview -->
+                    <section id="preview" class="content-section">
+                        <div class="section-icon">📄</div>
+                        <h2>Optimized CV Preview</h2>
+                        <p class="section-intro">Here's how your CV should look based on the recommendations:</p>
+                        
+                        <div class="cv-preview-container">
+                            <div class="cv-document">
+                                <div id="cvPreviewContent"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="template-footer">
+            <p>&copy; 2025 Viqri CV. AI-Powered CV Optimization.</p>
+        </footer>
+    </div>
+
+    <script src="template-script.js"></script>
+</body>
+</html>

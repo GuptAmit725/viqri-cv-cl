@@ -53,4 +53,4 @@ Thumbs.db
 *.env
 
 # Keep example file
-!.env.example
+.env.example

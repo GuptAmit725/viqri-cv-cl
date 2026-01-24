@@ -8,27 +8,51 @@ from datetime import datetime
 import shutil
 from pathlib import Path
 from dotenv import load_dotenv
+import logging
+import traceback
+import sys
+
+# Configure logging for Cloud Run
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
 
+logger.info("="*60)
+logger.info("🚀 Viqri CV API Starting")
+logger.info("="*60)
+
 # Import parsers
+logger.info("📦 Importing parsers...")
 from parsers.pdf_parser import parse_pdf
 from parsers.docx_parser import parse_docx
 from parsers.cv_extractor import extract_cv_info as extract_cv_info_regex
+logger.info("✅ Parsers imported successfully")
 
 # Import CV template generator
+logger.info("📦 Importing CV template generator...")
 from cv_template_generator import CVTemplateGenerator
+logger.info("✅ CV template generator imported")
 
 # Import Gemini-powered CV extractor (primary)
+logger.info("📦 Importing Gemini CV extractor...")
 from gemini_cv_extractor import GeminiCVExtractor
+logger.info("✅ Gemini CV extractor imported")
 
 # Import LLM-powered CV extractor (fallback)
+logger.info("📦 Attempting to import Groq extractor...")
 try:
     from llm_cv_extractor import LLMCVExtractor
     GROQ_AVAILABLE = True
-except:
+    logger.info("✅ Groq extractor available")
+except Exception as e:
     GROQ_AVAILABLE = False
+    logger.warning(f"⚠️  Groq extractor not available: {str(e)}")
 
 app = FastAPI(
     title="Viqri CV API",
@@ -49,6 +73,26 @@ app.add_middleware(
 UPLOAD_FOLDER = Path("uploads")
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+# Check for API keys at startup
+logger.info("🔑 Checking API keys...")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+if GOOGLE_API_KEY:
+    logger.info(f"✅ Google/Gemini API key found (length: {len(GOOGLE_API_KEY)})")
+else:
+    logger.warning("⚠️  No Google/Gemini API key found")
+
+if GROQ_API_KEY:
+    logger.info(f"✅ Groq API key found (length: {len(GROQ_API_KEY)})")
+else:
+    logger.warning("⚠️  No Groq API key found")
+
+if not GOOGLE_API_KEY and not GROQ_API_KEY:
+    logger.error("❌ No API keys found! Will use regex fallback only")
+else:
+    logger.info("✅ At least one API key available for extraction")
 
 # Create upload folder if it doesn't exist
 UPLOAD_FOLDER.mkdir(exist_ok=True)
@@ -118,29 +162,50 @@ async def upload_cv(file: UploadFile = File(...)):
     Returns:
         JSON response with extracted CV information
     """
+    logger.info("="*60)
+    logger.info("📤 Upload request received")
+    logger.info("="*60)
+    
+    # Initialize cv_data to None to avoid unbound local variable error
+    cv_data = None
+    
     try:
         # Check if file is provided
         if not file:
+            logger.error("❌ No file provided")
             raise HTTPException(status_code=400, detail="No file provided")
+
+        logger.info(f"📄 File received: {file.filename}")
+        logger.info(f"📄 Content type: {file.content_type}")
 
         # Check if file is selected
         if file.filename == '':
+            logger.error("❌ No file selected (empty filename)")
             raise HTTPException(status_code=400, detail="No file selected")
 
         # Validate file type
         if not allowed_file(file.filename):
+            logger.error(f"❌ Invalid file type: {file.filename}")
             raise HTTPException(
                 status_code=400,
                 detail="Invalid file type. Only PDF, DOC, and DOCX are allowed"
             )
+        
+        logger.info("✅ File type validated")
 
         # Check file size
         contents = await file.read()
+        file_size_mb = len(contents) / (1024 * 1024)
+        logger.info(f"📊 File size: {file_size_mb:.2f} MB")
+        
         if len(contents) > MAX_FILE_SIZE:
+            logger.error(f"❌ File too large: {file_size_mb:.2f} MB")
             raise HTTPException(
                 status_code=413,
                 detail=f"File size exceeds {MAX_FILE_SIZE / (1024 * 1024)}MB limit"
             )
+        
+        logger.info("✅ File size validated")
 
         # Reset file pointer
         await file.seek(0)
@@ -150,57 +215,119 @@ async def upload_cv(file: UploadFile = File(...)):
         original_filename = file.filename.replace(" ", "_")
         unique_filename = f"{timestamp}_{original_filename}"
         filepath = UPLOAD_FOLDER / unique_filename
+        
+        logger.info(f"💾 Saving file to: {filepath}")
 
         # Save the file
         with open(filepath, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
+        
+        logger.info("✅ File saved successfully")
 
         # Get file extension
         file_ext = get_file_extension(file.filename)
+        logger.info(f"📝 File extension: {file_ext}")
 
         # Parse the CV based on file type
         raw_text = ""
+        logger.info(f"📖 Parsing {file_ext.upper()} file...")
         
         if file_ext == 'pdf':
             raw_text = parse_pdf(str(filepath))
         elif file_ext in ['doc', 'docx']:
             raw_text = parse_docx(str(filepath))
         else:
+            logger.error(f"❌ Unsupported file format: {file_ext}")
             raise HTTPException(status_code=400, detail="Unsupported file format")
+        
+        text_length = len(raw_text)
+        logger.info(f"✅ Text extracted: {text_length} characters")
+        logger.info(f"📝 First 200 chars: {raw_text[:200]}...")
 
         # Extract structured information using AI
         # Priority: Gemini -> Groq -> Regex
-        extraction_method = "regex"
+        extraction_method = "none"
+        logger.info("="*60)
+        logger.info("🤖 Starting CV extraction...")
+        logger.info("="*60)
         
         # Try Gemini first (best)
         google_api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+        logger.info(f"🔑 Checking for Gemini API key... {'Found' if google_api_key else 'Not found'}")
+        
         if google_api_key:
+            logger.info("🔷 Attempting Gemini extraction...")
             try:
                 extractor = GeminiCVExtractor(api_key=google_api_key)
+                logger.info("✅ Gemini extractor initialized")
                 cv_data = extractor.extract_cv_info(raw_text)
                 extraction_method = "gemini"
+                logger.info("✅ Gemini extraction successful!")
+                logger.info(f"📊 Extracted data keys: {list(cv_data.keys())}")
             except Exception as e:
-                print(f"Gemini extraction failed: {str(e)}")
+                logger.error(f"❌ Gemini extraction failed: {str(e)}")
+                logger.error(f"Traceback: {traceback.format_exc()}")
                 cv_data = None
+        else:
+            logger.warning("⚠️  No Gemini API key, skipping Gemini extraction")
         
         # Fallback to Groq if Gemini failed
-        if not google_api_key or cv_data is None:
+        if cv_data is None:
+            logger.info("🔶 Gemini failed or unavailable, trying Groq...")
             groq_api_key = os.getenv("GROQ_API_KEY")
+            logger.info(f"🔑 Checking for Groq API key... {'Found' if groq_api_key else 'Not found'}")
+            
             if groq_api_key and GROQ_AVAILABLE:
+                logger.info("🔶 Attempting Groq extraction...")
                 try:
                     extractor = LLMCVExtractor(api_key=groq_api_key)
+                    logger.info("✅ Groq extractor initialized")
                     cv_data = extractor.extract_cv_info(raw_text)
                     extraction_method = "groq"
+                    logger.info("✅ Groq extraction successful!")
+                    logger.info(f"📊 Extracted data keys: {list(cv_data.keys())}")
                 except Exception as e:
-                    print(f"Groq extraction failed: {str(e)}")
+                    logger.error(f"❌ Groq extraction failed: {str(e)}")
+                    logger.error(f"Traceback: {traceback.format_exc()}")
                     cv_data = None
+            else:
+                logger.warning("⚠️  Groq unavailable or no API key")
         
         # Final fallback to regex
         if cv_data is None:
-            cv_data = extract_cv_info_regex(raw_text)
-            extraction_method = "regex"
+            logger.info("🔸 Both AI methods failed, using regex fallback...")
+            try:
+                cv_data = extract_cv_info_regex(raw_text)
+                extraction_method = "regex"
+                logger.info("✅ Regex extraction successful!")
+                logger.info(f"📊 Extracted data keys: {list(cv_data.keys())}")
+            except Exception as e:
+                logger.error(f"❌ Even regex extraction failed: {str(e)}")
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                raise HTTPException(
+                    status_code=500,
+                    detail="All extraction methods failed. Please try a different file."
+                )
+        
+        logger.info(f"✅ Final extraction method: {extraction_method}")
+        
+        # Verify cv_data is valid
+        if cv_data is None:
+            logger.error("❌ cv_data is None after all extraction attempts!")
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to extract CV data"
+            )
+        
+        if not isinstance(cv_data, dict):
+            logger.error(f"❌ cv_data is not a dict: {type(cv_data)}")
+            raise HTTPException(
+                status_code=500,
+                detail="Invalid CV data format"
+            )
 
         # Add metadata
+        logger.info("📦 Adding metadata...")
         cv_data['metadata'] = {
             'original_filename': file.filename,
             'file_size': len(contents),
@@ -209,17 +336,32 @@ async def upload_cv(file: UploadFile = File(...)):
             'processed': True,
             'extraction_method': extraction_method
         }
+        
+        logger.info("✅ Metadata added")
+        logger.info("="*60)
+        logger.info("✅ CV PROCESSING COMPLETE!")
+        logger.info("="*60)
 
         # Return the extracted data
-        return {
+        response = {
             "success": True,
             "message": "CV processed successfully",
             "data": cv_data
         }
+        logger.info(f"📤 Returning response with {len(str(response))} characters")
+        return response
 
     except HTTPException as he:
+        logger.error(f"❌ HTTP Exception: {he.detail}")
         raise he
     except Exception as e:
+        logger.error("="*60)
+        logger.error("❌ UNEXPECTED ERROR IN UPLOAD")
+        logger.error("="*60)
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.error(f"Error message: {str(e)}")
+        logger.error(f"Full traceback:\n{traceback.format_exc()}")
+        logger.error("="*60)
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 

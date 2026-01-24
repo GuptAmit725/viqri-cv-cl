@@ -8,6 +8,11 @@ import os
 import json
 from groq import Groq
 from typing import Dict, Any, Optional
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class GeminiCVExtractor:
@@ -67,10 +72,14 @@ class GeminiCVExtractor:
         Returns:
             Dictionary containing structured CV information
         """
+        logger.info("🔷 Gemini extract_cv_info called")
+        logger.info(f"📝 Input text length: {len(raw_text)} characters")
         
         prompt = self._create_extraction_prompt(raw_text)
+        logger.info(f"📋 Prompt created, length: {len(prompt)} characters")
         
         try:
+            logger.info("🚀 Sending request to Groq API...")
             # Generate response with Gemini
             response = self.groq_client.chat.completions.create(
                 messages=[
@@ -84,6 +93,10 @@ class GeminiCVExtractor:
                 max_tokens=4096,
                 response_format={"type": "json_object"}  # Force JSON response
             ).choices[0].message.content
+            
+            logger.info("✅ Received response from Groq")
+            logger.info(f"📊 Response length: {len(response)} characters")
+            logger.info(f"📄 First 200 chars of response: {response[:200]}...")
             # response = self.model.generate_content(prompt)
             print(response)
             # Check if response was blocked
@@ -119,36 +132,58 @@ class GeminiCVExtractor:
             
             # Clean the response text
             response_text = response.strip()
+            logger.info("🧹 Cleaned response text")
             
             # Remove markdown code blocks if present
             if response_text.startswith('```json'):
                 response_text = response_text[7:]  # Remove ```json
+                logger.info("✂️  Removed ```json prefix")
             if response_text.startswith('```'):
                 response_text = response_text[3:]  # Remove ```
+                logger.info("✂️  Removed ``` prefix")
             if response_text.endswith('```'):
                 response_text = response_text[:-3]  # Remove ```
+                logger.info("✂️  Removed ``` suffix")
             
             response_text = response_text.strip()
             
             # Try to parse JSON
+            logger.info("📊 Attempting to parse JSON...")
             try:
                 cv_data = json.loads(response_text)
+                logger.info("✅ JSON parsed successfully!")
+                logger.info(f"📋 CV data keys: {list(cv_data.keys())}")
             except json.JSONDecodeError as je:
-                print(f"JSON decode error: {str(je)}")
-                print(f"Response text (first 500 chars): {response_text[:500]}")
+                logger.error(f"❌ JSON decode error: {str(je)}")
+                logger.error(f"Response text (first 500 chars): {response_text[:500]}")
                 
+                logger.info("🔧 Attempting to fix JSON...")
                 # Try to fix common JSON issues
                 response_text = self._fix_json_string(response_text)
                 cv_data = json.loads(response_text)
+                logger.info("✅ JSON fixed and parsed!")
             
             # Validate and structure
-            return self._validate_and_structure(cv_data)
+            logger.info("🔍 Validating and structuring data...")
+            result = self._validate_and_structure(cv_data)
+            logger.info("✅ Data validated and structured successfully!")
+            return result
             
         except Exception as e:
-            print(f"Error in Gemini extraction: {str(e)}")
-            print(f"Using fallback extraction method...")
+            logger.error("="*60)
+            logger.error(f"❌ ERROR IN GEMINI EXTRACTION")
+            logger.error("="*60)
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(f"Error message: {str(e)}")
+            logger.error(f"Full traceback:")
+            import traceback
+            logger.error(traceback.format_exc())
+            logger.error("="*60)
+            logger.info("🔄 Using fallback extraction method...")
             # Return fallback structure
-            return self._create_fallback_structure(raw_text)
+            result = self._create_fallback_structure(raw_text)
+            logger.info("✅ Fallback structure created")
+            return result
     
     def _create_extraction_prompt(self, raw_text: str) -> str:
         """Create extraction prompt for Gemini"""

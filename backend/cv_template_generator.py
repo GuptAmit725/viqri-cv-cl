@@ -7,6 +7,11 @@ from groq import Groq
 import os
 import json
 from typing import Dict, Any, Optional
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class CVTemplateGenerator:
@@ -47,12 +52,22 @@ class CVTemplateGenerator:
         Returns:
             Dictionary containing optimized CV template and recommendations
         """
+        logger.info("="*60)
+        logger.info("📝 Template Generation Started")
+        logger.info("="*60)
+        logger.info(f"🎯 Target Job: {target_job}")
+        logger.info(f"📍 Target Location: {target_location}")
+        logger.info(f"🏢 Industry: {industry or 'Not specified'}")
+        logger.info(f"👔 Experience Level: {experience_level or 'Not specified'}")
         
         # Create prompt for Llama
+        logger.info("📋 Creating prompt...")
         prompt = self._create_prompt(cv_data, target_job, target_location, industry, experience_level)
+        logger.info(f"✅ Prompt created ({len(prompt)} characters)")
         
         # Call Groq API
         try:
+            logger.info("🚀 Calling Groq API...")
             chat_completion = self.client.chat.completions.create(
                 messages=[
                     {
@@ -74,22 +89,41 @@ class CVTemplateGenerator:
                 stream=False
             )
             
+            logger.info("✅ Received response from Groq")
+            
             # Parse response
             response_content = chat_completion.choices[0].message.content
+            logger.info(f"📊 Response length: {len(response_content)} characters")
             
             # Try to extract JSON from response
+            logger.info("📊 Parsing JSON response...")
             try:
                 template_data = json.loads(response_content)
-            except json.JSONDecodeError:
+                logger.info("✅ JSON parsed successfully")
+                logger.info(f"📋 Template keys: {list(template_data.keys())}")
+            except json.JSONDecodeError as je:
+                logger.warning(f"⚠️  JSON decode failed: {str(je)}")
+                logger.warning("📝 Using raw response as recommendations")
                 # If response is not JSON, structure it
                 template_data = {
                     "recommendations": response_content,
                     "success": True
                 }
             
+            logger.info("="*60)
+            logger.info("✅ Template Generation Complete")
+            logger.info("="*60)
             return template_data
             
         except Exception as e:
+            logger.error("="*60)
+            logger.error("❌ ERROR IN TEMPLATE GENERATION")
+            logger.error("="*60)
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(f"Error message: {str(e)}")
+            import traceback
+            logger.error(f"Full traceback:\n{traceback.format_exc()}")
+            logger.error("="*60)
             return {
                 "success": False,
                 "error": str(e)

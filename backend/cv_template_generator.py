@@ -24,7 +24,7 @@ class CVTemplateGenerator:
             raise ValueError("Groq API key is required. Set GROQ_API_KEY environment variable or pass it as parameter.")
         
         self.client = Groq(api_key=self.api_key)
-        self.model = "llama-3.1-8b-instant"  # Using Llama 3.1 70B for best results
+        self.model = "llama-3.1-8b-instant"  # Using Llama 3.1 8B for best results
     
     def generate_template(
         self,
@@ -105,71 +105,120 @@ class CVTemplateGenerator:
     ) -> str:
         """Create a detailed prompt for the LLM"""
         
-        # Extract key information from CV data
+        # Extract ALL information from CV data
         personal_info = cv_data.get('personal_info', {})
         skills = cv_data.get('skills', {})
         experience = cv_data.get('experience', [])
         education = cv_data.get('education', [])
+        projects = cv_data.get('projects', [])
+        certifications = cv_data.get('certifications', [])
+        awards = cv_data.get('awards', [])
+        summary = cv_data.get('professional_summary', '')
+        total_exp = cv_data.get('total_years_experience', 'Not specified')
+        
+        # Compile all skills
+        all_skills = []
+        if skills:
+            all_skills.extend(skills.get('programming_languages', []))
+            all_skills.extend(skills.get('frameworks', []))
+            all_skills.extend(skills.get('tools', []))
+            all_skills.extend(skills.get('technical', []))
+            all_skills.extend(skills.get('databases', []))
+            all_skills.extend(skills.get('cloud', []))
         
         prompt = f"""
-Based on the following CV information, create an optimized CV template and provide recommendations for a job application.
+Based on the COMPLETE CV information below, create an optimized CV template and provide comprehensive recommendations.
 
 TARGET JOB: {target_job}
 TARGET LOCATION: {target_location}
 {f"TARGET INDUSTRY: {industry}" if industry else ""}
 {f"EXPERIENCE LEVEL: {experience_level}" if experience_level else ""}
 
-CURRENT CV DATA:
+COMPLETE CURRENT CV DATA:
+
+PERSONAL INFORMATION:
 - Name: {personal_info.get('name', 'Not provided')}
 - Email: {personal_info.get('email', 'Not provided')}
+- Phone: {personal_info.get('phone', 'Not provided')}
 - Location: {personal_info.get('location', 'Not provided')}
-- Skills: {', '.join(skills.get('languages', []) + skills.get('tools', [])[:10])}
-- Years of Experience: {len(experience)} roles
-- Education: {len(education)} degrees/certifications
+- LinkedIn: {personal_info.get('linkedin', 'Not provided')}
+- GitHub: {personal_info.get('github', 'Not provided')}
+- Total Experience: {total_exp}
 
-EXPERIENCE SUMMARY:
-{json.dumps(experience[:3], indent=2) if experience else "No experience listed"}
+PROFESSIONAL SUMMARY:
+{summary if summary else "Not provided"}
+
+ALL WORK EXPERIENCE ({len(experience)} roles):
+{json.dumps(experience, indent=2) if experience else "No experience listed"}
+
+EDUCATION ({len(education)} degrees):
+{json.dumps(education, indent=2) if education else "No education listed"}
+
+COMPLETE SKILLS:
+- Programming Languages: {', '.join(skills.get('programming_languages', []))}
+- Frameworks: {', '.join(skills.get('frameworks', []))}
+- Tools: {', '.join(skills.get('tools', []))}
+- Databases: {', '.join(skills.get('databases', []))}
+- Cloud: {', '.join(skills.get('cloud', []))}
+- Technical: {', '.join(skills.get('technical', []))}
+- Soft Skills: {', '.join(skills.get('soft_skills', []))}
+
+PROJECTS ({len(projects)}):
+{json.dumps(projects, indent=2) if projects else "No projects listed"}
+
+CERTIFICATIONS ({len(certifications)}):
+{json.dumps(certifications, indent=2) if certifications else "No certifications listed"}
+
+AWARDS & ACHIEVEMENTS ({len(awards)}):
+{json.dumps(awards, indent=2) if awards else "No awards listed"}
 
 TASK:
-Generate a comprehensive CV optimization strategy. Return your response as a JSON object with the following structure:
+Generate a comprehensive CV optimization strategy using ALL the information above. Return your response as a JSON object with this structure:
 
 {{
   "template_structure": {{
     "format": "recommended format (chronological/functional/hybrid)",
-    "sections": ["ordered list of sections to include"],
-    "section_priorities": {{"section_name": "why it should be included"}},
+    "sections": ["ordered list of sections - include ALL relevant sections from CV"],
+    "section_priorities": {{"section_name": "why it should be included and how to optimize it"}},
     "length": "recommended page length"
   }},
   "content_recommendations": {{
-    "summary": "optimized professional summary for this role (2-3 sentences)",
-    "key_skills": ["top 8-10 skills to highlight for this role"],
-    "experience_tips": ["how to reframe experience for this role"],
-    "missing_skills": ["skills commonly required for this role that are missing"],
-    "keywords": ["ATS keywords to include for this role and location"]
+    "summary": "Re-write professional summary optimized for {target_job} in {target_location} (2-3 powerful sentences highlighting most relevant experience)",
+    "key_skills": ["Top 10-12 skills from the CV that are most relevant for {target_job}"],
+    "experience_tips": ["Specific tips for reframing ACTUAL work experience for this role - reference specific companies/projects from CV"],
+    "missing_skills": ["Skills commonly required for {target_job} that are missing from current skillset"],
+    "keywords": ["15-20 ATS keywords for {target_job} - include both from CV and additional ones needed"]
   }},
   "location_specific": {{
     "format_preferences": "CV format preferences in {target_location}",
-    "cultural_considerations": ["important cultural/regional considerations"],
-    "common_requirements": ["what employers in {target_location} typically expect"]
+    "cultural_considerations": ["Important cultural/regional considerations for {target_location}"],
+    "common_requirements": ["What employers in {target_location} typically expect"]
   }},
   "industry_insights": {{
-    "trends": "current trends in {industry or 'this industry'}",
-    "sought_after_skills": ["top skills employers are looking for"],
-    "red_flags": ["things to avoid in CV for this industry"]
+    "trends": "Current trends in {industry or 'the target industry'}",
+    "sought_after_skills": ["Top 8-10 skills employers are actively looking for"],
+    "red_flags": ["Things to avoid in CV for this industry"]
   }},
   "action_items": {{
-    "immediate": ["3-5 changes to make right now"],
-    "important": ["5-7 important improvements"],
-    "nice_to_have": ["3-5 optional enhancements"]
+    "immediate": ["5-7 specific changes to make RIGHT NOW - reference actual CV content"],
+    "important": ["7-10 important improvements - be specific about what to change"],
+    "nice_to_have": ["5 optional enhancements"]
   }},
   "template_example": {{
-    "professional_summary": "example summary tailored to the role",
-    "key_achievements": ["3 example achievement bullets formatted properly"],
-    "skills_presentation": "how to present skills section"
+    "professional_summary": "Example summary using ACTUAL experience from CV tailored to the target role",
+    "key_achievements": ["3 example achievement bullets from ACTUAL CV formatted with metrics"],
+    "skills_presentation": "How to present the ACTUAL skills from CV in optimal order"
   }}
 }}
 
-Ensure all recommendations are specific, actionable, and optimized for both ATS systems and human recruiters.
+CRITICAL REQUIREMENTS:
+1. Use ALL the actual information from the CV provided above
+2. Reference specific companies, projects, technologies, and achievements from the CV
+3. Don't invent or assume information not in the CV
+4. Provide specific, actionable recommendations
+5. Ensure all recommendations are optimized for both ATS systems and human recruiters
+6. Use actual data points and metrics from the experience section
+7. Include ALL relevant sections from the original CV in your recommendations
 """
         
         return prompt

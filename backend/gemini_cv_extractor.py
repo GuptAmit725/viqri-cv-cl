@@ -6,6 +6,7 @@ Uses Google's Gemini API for intelligent CV extraction with reliable JSON genera
 import google.generativeai as genai
 import os
 import json
+from groq import Groq
 from typing import Dict, Any, Optional
 
 
@@ -19,6 +20,7 @@ class GeminiCVExtractor:
         Args:
             api_key: Google API key (if not provided, will look for GOOGLE_API_KEY env var)
         """
+        self.groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
         self.api_key = api_key or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
         if not self.api_key:
             raise ValueError("Google API key is required. Set GOOGLE_API_KEY or GEMINI_API_KEY environment variable.")
@@ -26,13 +28,33 @@ class GeminiCVExtractor:
         # Configure Gemini
         genai.configure(api_key=self.api_key)
         
-        # Use Gemini 1.5 Flash for speed and JSON mode
+        # Use Gemini 1.5 Flash with relaxed safety settings
+        safety_settings = [
+            {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_NONE"
+            },
+            {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": "BLOCK_NONE"
+            },
+            {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_NONE"
+            },
+            {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_NONE"
+            },
+        ]
+        self.groq_model = "openai/gpt-oss-120b"
         self.model = genai.GenerativeModel(
-            "gemini-3-flash-preview",
+            'gemini-3-flash-preview',
             generation_config={
                 "response_mime_type": "application/json",
                 "temperature": 0.1
-            }
+            },
+            safety_settings=safety_settings
         )
     
     def extract_cv_info(self, raw_text: str) -> Dict[str, Any]:
@@ -50,16 +72,81 @@ class GeminiCVExtractor:
         
         try:
             # Generate response with Gemini
-            response = self.model.generate_content(prompt)
+            response = self.groq_client.chat.completions.create(
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                model=self.groq_model,
+                temperature=1,  # Very low temperature for consistent JSON
+                max_tokens=4096,
+                response_format={"type": "json_object"}  # Force JSON response
+            ).choices[0].message.content
+            # response = self.model.generate_content(prompt)
+            print(response)
+            # Check if response was blocked
+            # if not response.candidates:
+            #     print("Response blocked by safety filters")
+            #     return self._create_fallback_structure(raw_text)
             
-            # Parse JSON response
-            cv_data = json.loads(response.text)
+            # candidate = response.candidates[0]
+            
+            # # Check finish reason
+            # if candidate.finish_reason != 1:  # 1 = STOP (success)
+            #     finish_reason_map = {
+            #         2: "MAX_TOKENS",
+            #         3: "SAFETY",
+            #         4: "RECITATION",
+            #         5: "OTHER"
+            #     }
+            #     reason = finish_reason_map.get(candidate.finish_reason, "UNKNOWN")
+            #     print(f"Response generation stopped: {reason}")
+                
+            #     # If it's not a safety issue, try to get partial content
+            #     if candidate.finish_reason != 3 and hasattr(candidate, 'content') and candidate.content.parts:
+            #         response_text = candidate.content.parts[0].text
+            #     else:
+            #         return self._create_fallback_structure(raw_text)
+            # else:
+            #     # Normal case - get text
+            #     if not hasattr(response, 'text') or not response.text:
+            #         print("Response has no text content")
+            #         return self._create_fallback_structure(raw_text)
+                
+            #     response_text = response.text
+            
+            # Clean the response text
+            response_text = response.strip()
+            
+            # Remove markdown code blocks if present
+            if response_text.startswith('```json'):
+                response_text = response_text[7:]  # Remove ```json
+            if response_text.startswith('```'):
+                response_text = response_text[3:]  # Remove ```
+            if response_text.endswith('```'):
+                response_text = response_text[:-3]  # Remove ```
+            
+            response_text = response_text.strip()
+            
+            # Try to parse JSON
+            try:
+                cv_data = json.loads(response_text)
+            except json.JSONDecodeError as je:
+                print(f"JSON decode error: {str(je)}")
+                print(f"Response text (first 500 chars): {response_text[:500]}")
+                
+                # Try to fix common JSON issues
+                response_text = self._fix_json_string(response_text)
+                cv_data = json.loads(response_text)
             
             # Validate and structure
             return self._validate_and_structure(cv_data)
             
         except Exception as e:
             print(f"Error in Gemini extraction: {str(e)}")
+            print(f"Using fallback extraction method...")
             # Return fallback structure
             return self._create_fallback_structure(raw_text)
     
@@ -69,6 +156,9 @@ class GeminiCVExtractor:
         # Truncate very long CVs
         if len(raw_text) > 30000:
             raw_text = raw_text[:30000] + "... [truncated]"
+        
+        # Clean the text to avoid JSON issues
+        raw_text = self._clean_text_for_json(raw_text)
         
         prompt = f"""
 Extract all information from this CV and return it as JSON following this exact schema:
@@ -148,18 +238,21 @@ Return JSON with this structure:
       "proficiency": "Native/Fluent/Intermediate/Basic"
     }}
   ],
-  "total_years_experience": "calculated years like '5 years' or null",
+  "total_years_experience": "calculated years like 5 years or null",
   "industry": "primary industry or null"
 }}
 
-RULES:
-1. Extract ONLY information present in the CV
-2. Use null for missing fields
-3. Use empty arrays [] for missing lists
-4. Identify quantified achievements (numbers, percentages, metrics)
-5. Categorize skills properly
-6. Calculate total years of experience from work history
-7. Return valid JSON only
+CRITICAL RULES:
+1. Return ONLY valid JSON - no markdown, no code blocks, no extra text
+2. Extract ONLY information present in the CV
+3. Use null for missing fields
+4. Use empty arrays [] for missing lists
+5. ESCAPE all quotes in strings - use \\" for quotes inside strings
+6. Replace line breaks in strings with spaces
+7. Remove any special characters that could break JSON
+8. Ensure all strings are properly terminated
+9. Do not include any text before or after the JSON object
+10. Start with {{ and end with }}
 """
         
         return prompt
@@ -210,39 +303,134 @@ RULES:
         return cv_data
     
     def _create_fallback_structure(self, raw_text: str) -> Dict[str, Any]:
-        """Create fallback structure if extraction fails"""
+        """Create fallback structure if extraction fails - try regex extraction"""
         
-        return {
-            "personal_info": {
-                "name": None,
-                "email": None,
-                "phone": None,
-                "location": None,
-                "linkedin": None,
-                "github": None,
-                "website": None
-            },
-            "professional_summary": None,
-            "education": [],
-            "experience": [],
-            "skills": {
-                "programming_languages": [],
-                "frameworks": [],
-                "tools": [],
-                "databases": [],
-                "cloud": [],
-                "technical": [],
-                "soft_skills": []
-            },
-            "projects": [],
-            "certifications": [],
-            "awards": [],
-            "languages": [],
-            "total_years_experience": None,
-            "industry": None,
-            "raw_text_snippet": raw_text[:500],
-            "extraction_error": True
-        }
+        print("Attempting regex-based extraction as fallback...")
+        
+        # Try to import and use regex extractor
+        try:
+            import sys
+            import os
+            
+            # Add parsers directory to path if not already there
+            parsers_path = os.path.join(os.path.dirname(__file__), 'parsers')
+            if parsers_path not in sys.path:
+                sys.path.insert(0, parsers_path)
+            
+            from parsers.cv_extractor import extract_cv_info
+            
+            # Use regex extraction
+            cv_data = extract_cv_info(raw_text)
+            cv_data['extraction_method'] = 'regex_fallback'
+            return cv_data
+            
+        except Exception as e:
+            print(f"Regex extraction also failed: {str(e)}")
+            
+            # Return minimal structure
+            return {
+                "personal_info": {
+                    "name": None,
+                    "email": None,
+                    "phone": None,
+                    "location": None,
+                    "linkedin": None,
+                    "github": None,
+                    "website": None
+                },
+                "professional_summary": None,
+                "education": [],
+                "experience": [],
+                "skills": {
+                    "programming_languages": [],
+                    "frameworks": [],
+                    "tools": [],
+                    "databases": [],
+                    "cloud": [],
+                    "technical": [],
+                    "soft_skills": []
+                },
+                "projects": [],
+                "certifications": [],
+                "awards": [],
+                "languages": [],
+                "total_years_experience": None,
+                "industry": None,
+                "raw_text_snippet": raw_text[:500],
+                "extraction_error": True,
+                "extraction_method": "failed"
+            }
+    
+    def _fix_json_string(self, json_str: str) -> str:
+        """
+        Attempt to fix common JSON issues
+        
+        Args:
+            json_str: Potentially malformed JSON string
+            
+        Returns:
+            Fixed JSON string
+        """
+        import re
+        
+        # Remove any BOM or invisible characters
+        json_str = json_str.encode('utf-8', 'ignore').decode('utf-8')
+        
+        # Remove any trailing commas before closing braces/brackets
+        json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+        
+        # Try to escape unescaped quotes in string values
+        # This is a simple heuristic and may not catch all cases
+        lines = json_str.split('\n')
+        fixed_lines = []
+        
+        for line in lines:
+            # If line contains a string value with unescaped quotes
+            if ':' in line and '"' in line:
+                # Split at first colon
+                parts = line.split(':', 1)
+                if len(parts) == 2:
+                    key_part = parts[0]
+                    value_part = parts[1]
+                    
+                    # Count quotes in value part
+                    if value_part.count('"') % 2 != 0:
+                        # Odd number of quotes - try to fix
+                        # Look for patterns like "text "word" more text"
+                        # and replace with "text \"word\" more text"
+                        value_part = re.sub(r'([^\\])"([^",}\]]+)"', r'\1\"\2\"', value_part)
+                        line = key_part + ':' + value_part
+            
+            fixed_lines.append(line)
+        
+        return '\n'.join(fixed_lines)
+    
+    def _clean_text_for_json(self, text: str) -> str:
+        """
+        Clean text to prevent JSON parsing issues
+        
+        Args:
+            text: Raw CV text
+            
+        Returns:
+            Cleaned text safe for JSON
+        """
+        import re
+        
+        # Replace smart quotes with regular quotes
+        text = text.replace('"', '"').replace('"', '"')
+        text = text.replace(''', "'").replace(''', "'")
+        
+        # Replace multiple spaces with single space
+        text = re.sub(r'\s+', ' ', text)
+        
+        # Remove null bytes and other control characters
+        text = ''.join(char for char in text if char.isprintable() or char in ['\n', '\t'])
+        
+        # Replace newlines with spaces to avoid multiline string issues
+        text = text.replace('\n', ' ').replace('\r', ' ')
+        
+        return text.strip()
     
     def extract_with_insights(self, raw_text: str) -> Dict[str, Any]:
         """

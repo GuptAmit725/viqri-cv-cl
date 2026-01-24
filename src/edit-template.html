@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Your CV Template - Viqri CV</title>
+    <link rel="stylesheet" href="template-styles.css">
+    <link rel="stylesheet" href="edit-template-styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="template-container">
+        <!-- Header -->
+        <header class="template-header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">V</span>
+                    <span class="logo-text">Viqri CV</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-secondary" id="backBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="19" y1="12" x2="5" y2="12"/>
+                            <polyline points="12 19 5 12 12 5"/>
+                        </svg>
+                        Back
+                    </button>
+                    <button class="btn-secondary" id="viewModeBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        View Mode
+                    </button>
+                    <button class="btn-primary" id="saveBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                            <polyline points="17 21 17 13 7 13 7 21"/>
+                            <polyline points="7 3 7 8 15 8"/>
+                        </svg>
+                        Save Changes
+                    </button>
+                    <button class="btn-primary" id="generateFinalBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                        Generate Final CV
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="edit-main">
+            <div class="edit-container">
+                
+                <!-- Personal Info Section -->
+                <section class="edit-section">
+                    <div class="section-header-edit">
+                        <h2>Personal Information</h2>
+                        <span class="section-status">Required</span>
+                    </div>
+                    <div class="edit-fields">
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Full Name *</label>
+                                <input type="text" id="name" placeholder="John Doe" required>
+                            </div>
+                            <div class="field-group">
+                                <label>Email *</label>
+                                <input type="email" id="email" placeholder="john@example.com" required>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Phone</label>
+                                <input type="tel" id="phone" placeholder="+1 234 567 8900">
+                            </div>
+                            <div class="field-group">
+                                <label>Location</label>
+                                <input type="text" id="location" placeholder="City, Country">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>LinkedIn</label>
+                                <input type="url" id="linkedin" placeholder="linkedin.com/in/johndoe">
+                            </div>
+                            <div class="field-group">
+                                <label>GitHub</label>
+                                <input type="url" id="github" placeholder="github.com/johndoe">
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label>Website</label>
+                            <input type="url" id="website" placeholder="johndoe.com">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Professional Summary Section -->
+                <section class="edit-section">
+                    <div class="section-header-edit">
+                        <h2>Professional Summary</h2>
+                        <span class="section-status">Recommended</span>
+                    </div>
+                    <div class="edit-fields">
+                        <div class="field-group">
+                            <label>Summary (2-3 sentences)</label>
+                            <textarea id="summary" rows="4" placeholder="AI Engineering professional with 7+ years of experience..."></textarea>
+                            <div class="field-hint">Highlight your most impressive achievements and skills relevant to the target role</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Experience Section -->
+                <section class="edit-section">
+                    <div class="section-header-edit">
+                        <h2>Work Experience</h2>
+                        <button class="btn-add" id="addExperienceBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Add Experience
+                        </button>
+                    </div>
+                    <div id="experienceList" class="items-list"></div>
+                </section>
+
+                <!-- Education Section -->
+                <section class="edit-section">
+                    <div class="section-header-edit">
+                        <h2>Education</h2>
+                        <button class="btn-add" id="addEducationBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Add Education
+                        </button>
+                    </div>
+                    <div id="educationList" class="items-list"></div>
+                </section>
+
+                <!-- Skills Section -->
+                <section class="edit-section">
+                    <div class="section-header-edit">
+                        <h2>Skills</h2>
+                    </div>
+                    <div class="edit-fields">
+                        <div class="field-group">
+                            <label>Programming Languages</label>
+                            <div class="tags-input" id="programmingLanguages"></div>
+                            <input type="text" class="tag-input" placeholder="Add skill and press Enter" data-target="programmingLanguages">
+                        </div>
+                        <div class="field-group">
+                            <label>Frameworks</label>
+                            <div class="tags-input" id="frameworks"></div>
+                            <input type="text" class="tag-input" placeholder="Add framework and press Enter" data-target="frameworks">
+                        </div>
+                        <div class="field-group">
+                            <label>Tools & Technologies</label>
+                            <div class="tags-input" id="tools"></div>
+                            <input type="text" class="tag-input" placeholder="Add tool and press Enter" data-target="tools">
+                        </div>
+                        <div class="field-group">
+                            <label>Databases</label>
+                            <div class="tags-input" id="databases"></div>
+                            <input type="text" class="tag-input" placeholder="Add database and press Enter" data-target="databases">
+                        </div>
+                        <div class="field-group">
+                            <label>Cloud Platforms</label>
+                            <div class="tags-input" id="cloud"></div>
+                            <input type="text" class="tag-input" placeholder="Add cloud platform and press Enter" data-target="cloud">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Projects Section -->
+                <section class="edit-section">
+                    <div class="section-header-edit">
+                        <h2>Projects</h2>
+                        <button class="btn-add" id="addProjectBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Add Project
+                        </button>
+                    </div>
+                    <div id="projectsList" class="items-list"></div>
+                </section>
+
+                <!-- Certifications Section -->
+                <section class="edit-section">
+                    <div class="section-header-edit">
+                        <h2>Certifications</h2>
+                        <button class="btn-add" id="addCertificationBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Add Certification
+                        </button>
+                    </div>
+                    <div id="certificationsList" class="items-list"></div>
+                </section>
+
+                <!-- Awards Section -->
+                <section class="edit-section">
+                    <div class="section-header-edit">
+                        <h2>Awards & Achievements</h2>
+                        <button class="btn-add" id="addAwardBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Add Award
+                        </button>
+                    </div>
+                    <div id="awardsList" class="items-list"></div>
+                </section>
+
+            </div>
+        </main>
+
+        <!-- Success Modal -->
+        <div class="modal" id="successModal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-icon success">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+                <h3>Changes Saved!</h3>
+                <p>Your CV has been updated successfully.</p>
+                <button class="btn-primary" onclick="closeModal()">Continue Editing</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="edit-template-script.js"></script>
+</body>
+</html>

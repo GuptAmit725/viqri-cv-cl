@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create GitHub Portfolio - Viqri CV</title>
+    <link rel="stylesheet" href="template-styles.css">
+    <link rel="stylesheet" href="portfolio-wizard-styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="wizard-container">
+        <!-- Header -->
+        <header class="wizard-header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">V</span>
+                    <span class="logo-text">Viqri CV</span>
+                </div>
+                <h1 class="wizard-title">Create Your GitHub Portfolio</h1>
+            </div>
+        </header>
+
+        <!-- Progress Tracker -->
+        <div class="progress-tracker">
+            <div class="progress-step active" data-step="1">
+                <div class="step-number">1</div>
+                <div class="step-label">Welcome</div>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-step="2">
+                <div class="step-number">2</div>
+                <div class="step-label">GitHub Token</div>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-step="3">
+                <div class="step-number">3</div>
+                <div class="step-label">Repository</div>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-step="4">
+                <div class="step-number">4</div>
+                <div class="step-label">Deploy</div>
+            </div>
+        </div>
+
+        <!-- Wizard Content -->
+        <main class="wizard-main">
+            
+            <!-- Step 1: Welcome -->
+            <div class="wizard-step active" id="step1">
+                <div class="step-content">
+                    <div class="step-icon">🚀</div>
+                    <h2>Welcome to Portfolio Generator</h2>
+                    <p class="step-description">
+                        We'll automatically create and deploy a beautiful portfolio website to GitHub Pages 
+                        using your CV information. This process takes just a few minutes!
+                    </p>
+                    
+                    <div class="info-box">
+                        <h3>📋 What you'll need:</h3>
+                        <ul>
+                            <li>A GitHub account</li>
+                            <li>A GitHub Personal Access Token (we'll guide you)</li>
+                            <li>Your CV data (already uploaded ✓)</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box success">
+                        <h3>✨ What you'll get:</h3>
+                        <ul>
+                            <li>Professional portfolio website</li>
+                            <li>Hosted on GitHub Pages (free)</li>
+                            <li>Your own URL (username.github.io)</li>
+                            <li>Fully responsive design</li>
+                            <li>Easy to update anytime</li>
+                        </ul>
+                    </div>
+
+                    <button class="btn-primary btn-large" onclick="nextStep()">
+                        Get Started
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                            <polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: GitHub Token -->
+            <div class="wizard-step" id="step2">
+                <div class="step-content">
+                    <div class="step-icon">🔑</div>
+                    <h2>GitHub Personal Access Token</h2>
+                    <p class="step-description">
+                        We need a GitHub token to create and deploy your portfolio. Don't worry, we'll show you exactly how to get one!
+                    </p>
+
+                    <div class="token-input-section">
+                        <label for="githubToken">Enter your GitHub Personal Access Token:</label>
+                        <input 
+                            type="password" 
+                            id="githubToken" 
+                            placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                            autocomplete="off"
+                        >
+                        <div class="input-hint">
+                            <button class="btn-link" onclick="toggleTokenVisibility()">
+                                <span id="toggleTokenText">Show token</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span>📖 How to get a GitHub token (Step-by-step guide)</span>
+                            <svg class="accordion-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </div>
+                        <div class="accordion-content">
+                            <ol class="instructions-list">
+                                <li>
+                                    Go to <a href="https://github.com/settings/tokens" target="_blank">GitHub Token Settings</a>
+                                </li>
+                                <li>Click <strong>"Generate new token"</strong> → <strong>"Generate new token (classic)"</strong></li>
+                                <li>Give it a name like <code>"Viqri CV Portfolio"</code></li>
+                                <li>Set expiration (we recommend <strong>90 days</strong>)</li>
+                                <li>
+                                    Select these permissions:
+                                    <ul>
+                                        <li>✓ <strong>repo</strong> (Full control of private repositories)</li>
+                                        <li>✓ <strong>workflow</strong> (Update GitHub Action workflows)</li>
+                                    </ul>
+                                </li>
+                                <li>Scroll down and click <strong>"Generate token"</strong></li>
+                                <li>Copy the token (it starts with <code>ghp_</code>)</li>
+                                <li>Paste it in the field above</li>
+                            </ol>
+                            <div class="warning-box">
+                                <strong>⚠️ Important:</strong> Save your token somewhere safe! GitHub won't show it again.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>🔒 Your token is safe:</strong> We only use it to create your portfolio repository. 
+                        It's never stored on our servers.
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn-secondary" onclick="prevStep()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="19" y1="12" x2="5" y2="12"/>
+                                <polyline points="12 19 5 12 12 5"/>
+                            </svg>
+                            Back
+                        </button>
+                        <button class="btn-primary" onclick="verifyToken()" id="verifyTokenBtn">
+                            Verify Token
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div id="tokenVerificationResult"></div>
+                </div>
+            </div>
+
+            <!-- Step 3: Repository Configuration -->
+            <div class="wizard-step" id="step3">
+                <div class="step-content">
+                    <div class="step-icon">📦</div>
+                    <h2>Repository Configuration</h2>
+                    <p class="step-description">
+                        Choose a name for your portfolio repository. We recommend using your username for the default GitHub Pages URL.
+                    </p>
+
+                    <div class="user-info-display" id="userInfoDisplay">
+                        <!-- Will be populated after token verification -->
+                    </div>
+
+                    <div class="repo-config-section">
+                        <label for="repoName">Repository Name:</label>
+                        <input 
+                            type="text" 
+                            id="repoName" 
+                            placeholder="username.github.io"
+                            value=""
+                        >
+                        <div class="input-hint">
+                            <strong>Recommended:</strong> Use <code><span id="recommendedRepoName">username</span>.github.io</code> 
+                            for your main portfolio site
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <h3>📍 Your portfolio URL will be:</h3>
+                        <div class="url-preview">
+                            <code id="portfolioUrlPreview">https://username.github.io</code>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn-secondary" onclick="prevStep()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="19" y1="12" x2="5" y2="12"/>
+                                <polyline points="12 19 5 12 12 5"/>
+                            </svg>
+                            Back
+                        </button>
+                        <button class="btn-primary" onclick="nextStep()">
+                            Continue
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                                <polyline points="12 5 19 12 12 19"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Deploy -->
+            <div class="wizard-step" id="step4">
+                <div class="step-content">
+                    <div class="step-icon">🎉</div>
+                    <h2>Ready to Deploy!</h2>
+                    <p class="step-description">
+                        Review your settings and click deploy to create your portfolio website.
+                    </p>
+
+                    <div class="deployment-summary">
+                        <h3>Deployment Summary:</h3>
+                        <div class="summary-item">
+                            <span class="summary-label">GitHub Username:</span>
+                            <span class="summary-value" id="summaryUsername">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Repository:</span>
+                            <span class="summary-value" id="summaryRepo">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Portfolio URL:</span>
+                            <span class="summary-value" id="summaryUrl">-</span>
+                        </div>
+                    </div>
+
+                    <div class="preview-section">
+                        <button class="btn-secondary btn-full" onclick="previewPortfolio()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            Preview Portfolio Before Deploying
+                        </button>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn-secondary" onclick="prevStep()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="19" y1="12" x2="5" y2="12"/>
+                                <polyline points="12 19 5 12 12 5"/>
+                            </svg>
+                            Back
+                        </button>
+                        <button class="btn-primary btn-large" onclick="deployPortfolio()" id="deployBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                            Deploy Portfolio
+                        </button>
+                    </div>
+
+                    <!-- Deployment Progress -->
+                    <div id="deploymentProgress" style="display: none;">
+                        <div class="deployment-status">
+                            <div class="spinner-large"></div>
+                            <p id="deploymentStatusText">Deploying your portfolio...</p>
+                        </div>
+                    </div>
+
+                    <!-- Deployment Success -->
+                    <div id="deploymentSuccess" style="display: none;">
+                        <div class="success-message">
+                            <div class="success-icon-large">✓</div>
+                            <h2>Portfolio Deployed Successfully! 🎉</h2>
+                            <p>Your professional portfolio is now live on GitHub Pages!</p>
+                            
+                            <div class="success-url">
+                                <label>Your Portfolio URL:</label>
+                                <div class="url-box">
+                                    <a href="#" id="successPortfolioUrl" target="_blank" class="portfolio-link">
+                                        https://username.github.io
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="info-box">
+                                <p><strong>📝 Note:</strong> It may take 2-3 minutes for GitHub Pages to publish your site. 
+                                If you see a 404 error, please wait a moment and refresh.</p>
+                            </div>
+
+                            <div class="button-group">
+                                <button class="btn-primary" onclick="window.open(document.getElementById('successPortfolioUrl').href, '_blank')">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                        <polyline points="15 3 21 3 21 9"/>
+                                        <line x1="10" y1="14" x2="21" y2="3"/>
+                                    </svg>
+                                    Visit Portfolio
+                                </button>
+                                <button class="btn-secondary" onclick="window.location.href='index.html'">
+                                    Create Another
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="wizard-footer">
+            <p>&copy; 2025 Viqri CV. Automated Portfolio Generation.</p>
+        </footer>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="modal" id="previewModal" style="display: none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>Portfolio Preview</h3>
+                <button class="btn-close" onclick="closePreview()">×</button>
+            </div>
+            <div class="modal-body">
+                <iframe id="previewFrame" style="width: 100%; height: 600px; border: 1px solid #e2e8f0; border-radius: 8px;"></iframe>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closePreview()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="portfolio-wizard-script.js"></script>
+</body>
+</html>

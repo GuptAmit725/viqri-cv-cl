@@ -54,10 +54,20 @@ except Exception as e:
     GROQ_AVAILABLE = False
     logger.warning(f"⚠️  Groq extractor not available: {str(e)}")
 
+# Import GitHub Portfolio Generator
+logger.info("📦 Importing GitHub Portfolio Generator...")
+try:
+    from github_portfolio_generator import GitHubPortfolioGenerator
+    GITHUB_PORTFOLIO_AVAILABLE = True
+    logger.info("✅ GitHub Portfolio Generator available")
+except Exception as e:
+    GITHUB_PORTFOLIO_AVAILABLE = False
+    logger.warning(f"⚠️  GitHub Portfolio Generator not available: {str(e)}")
+
 app = FastAPI(
     title="Viqri CV API",
-    description="CV Upload and Parsing API",
-    version="1.0.0"
+    description="CV Upload and Parsing API with Portfolio Generator",
+    version="2.0.0"
 )
 
 # ============================================================================
@@ -148,6 +158,19 @@ class ImprovementRequest(BaseModel):
     focus_area: str = "general"
 
 
+class GitHubVerifyRequest(BaseModel):
+    """Request model for GitHub token verification"""
+    github_token: str
+
+
+class PortfolioDeployRequest(BaseModel):
+    """Request model for portfolio deployment"""
+    github_token: str
+    github_username: str
+    repo_name: Optional[str] = None
+    cv_data: dict
+
+
 def allowed_file(filename: str) -> bool:
     """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -163,11 +186,12 @@ async def root():
     """Root endpoint"""
     return {
         "message": "Viqri CV API",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "docs": "/docs",
         "health": "/health",
         "cors_enabled": True,
-        "allowed_origins": len(ALLOWED_ORIGINS)
+        "allowed_origins": len(ALLOWED_ORIGINS),
+        "features": ["cv_parsing", "template_generation", "portfolio_generator"]
     }
 
 
@@ -178,7 +202,8 @@ async def health_check():
         "status": "healthy",
         "message": "Viqri CV Backend is running",
         "timestamp": datetime.now().isoformat(),
-        "cors_configured": True
+        "cors_configured": True,
+        "portfolio_generator": GITHUB_PORTFOLIO_AVAILABLE
     }
 
 
@@ -246,124 +271,105 @@ async def upload_cv(file: UploadFile = File(...)):
         original_filename = file.filename.replace(" ", "_")
         unique_filename = f"{timestamp}_{original_filename}"
         filepath = UPLOAD_FOLDER / unique_filename
-        
-        logger.info(f"💾 Saving file to: {filepath}")
 
-        # Save the file
+        # Save file
+        logger.info(f"💾 Saving file: {filepath}")
         with open(filepath, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        
         logger.info("✅ File saved successfully")
 
         # Get file extension
         file_ext = get_file_extension(file.filename)
         logger.info(f"📝 File extension: {file_ext}")
 
-        # Parse the CV based on file type
-        raw_text = ""
-        logger.info(f"📖 Parsing {file_ext.upper()} file...")
-        
+        # Parse file based on type
+        logger.info("📖 Parsing file...")
         if file_ext == 'pdf':
+            logger.info("Using PDF parser...")
             raw_text = parse_pdf(str(filepath))
         elif file_ext in ['doc', 'docx']:
+            logger.info("Using DOCX parser...")
             raw_text = parse_docx(str(filepath))
         else:
             logger.error(f"❌ Unsupported file format: {file_ext}")
-            raise HTTPException(status_code=400, detail="Unsupported file format")
-        
-        text_length = len(raw_text)
-        logger.info(f"✅ Text extracted: {text_length} characters")
-        logger.info(f"📝 First 200 chars: {raw_text[:200]}...")
+            raise HTTPException(status_code=400, detail=f"Unsupported file format: {file_ext}")
 
-        # Extract structured information using AI
-        # Priority: Gemini -> Groq -> Regex
-        extraction_method = "none"
-        logger.info("="*60)
-        logger.info("🤖 Starting CV extraction...")
-        logger.info("="*60)
+        logger.info(f"✅ File parsed, extracted {len(raw_text)} characters")
+
+        # Extract CV information using multiple methods with fallback
+        logger.info("🔍 Extracting CV information...")
         
-        # Try Gemini first
-        if GOOGLE_API_KEY:
+        extraction_successful = False
+        extraction_method = None
+
+        # Method 1: Try Gemini first (most accurate)
+        if GOOGLE_API_KEY and not extraction_successful:
             try:
-                logger.info("🎯 Attempting extraction with Gemini API...")
+                logger.info("Attempting Gemini extraction...")
                 gemini_extractor = GeminiCVExtractor(api_key=GOOGLE_API_KEY)
                 cv_data = gemini_extractor.extract_cv_info(raw_text)
-                extraction_method = "gemini"
-                logger.info("✅ Successfully extracted CV info using Gemini")
+                
+                if cv_data and cv_data.get("personal_info"):
+                    extraction_successful = True
+                    extraction_method = "gemini"
+                    logger.info("✅ Gemini extraction successful")
             except Exception as e:
                 logger.warning(f"⚠️  Gemini extraction failed: {str(e)}")
-                logger.warning(f"⚠️  Error details: {traceback.format_exc()}")
-                cv_data = None
-        
-        # Fallback to Groq if Gemini failed
-        if cv_data is None and GROQ_API_KEY and GROQ_AVAILABLE:
+
+        # Method 2: Try Groq LLM as fallback
+        if GROQ_API_KEY and GROQ_AVAILABLE and not extraction_successful:
             try:
-                logger.info("🎯 Attempting extraction with Groq API (fallback)...")
-                groq_extractor = LLMCVExtractor(api_key=GROQ_API_KEY)
-                cv_data = groq_extractor.extract_cv_info(raw_text)
-                extraction_method = "groq"
-                logger.info("✅ Successfully extracted CV info using Groq")
+                logger.info("Attempting Groq LLM extraction...")
+                llm_extractor = LLMCVExtractor(api_key=GROQ_API_KEY)
+                cv_data = llm_extractor.extract_cv_info(raw_text)
+                
+                if cv_data and cv_data.get("personal_info"):
+                    extraction_successful = True
+                    extraction_method = "groq_llm"
+                    logger.info("✅ Groq LLM extraction successful")
             except Exception as e:
-                logger.warning(f"⚠️  Groq extraction failed: {str(e)}")
-                logger.warning(f"⚠️  Error details: {traceback.format_exc()}")
-                cv_data = None
-        
-        # Final fallback to regex
-        if cv_data is None:
-            logger.info("📝 Using regex fallback extraction...")
+                logger.warning(f"⚠️  Groq LLM extraction failed: {str(e)}")
+
+        # Method 3: Fallback to regex extraction
+        if not extraction_successful:
+            logger.info("Using regex extraction as fallback...")
             cv_data = extract_cv_info_regex(raw_text)
             extraction_method = "regex"
-            logger.info("✅ Extracted CV info using regex patterns")
-        
-        logger.info(f"✅ Extraction method used: {extraction_method}")
-        logger.info("="*60)
-        logger.info("📊 Extraction Summary:")
-        logger.info(f"   Method: {extraction_method}")
-        logger.info(f"   Name: {cv_data.get('personal_info', {}).get('name', 'Not found')}")
-        logger.info(f"   Email: {cv_data.get('personal_info', {}).get('email', 'Not found')}")
-        logger.info(f"   Experience items: {len(cv_data.get('experience', []))}")
-        logger.info(f"   Education items: {len(cv_data.get('education', []))}")
-        logger.info(f"   Skills found: {len(cv_data.get('skills', {}).get('programming_languages', []))}")
-        logger.info("="*60)
+            logger.info("✅ Regex extraction completed")
 
-        # Clean up the file
-        try:
+        logger.info(f"✅ CV extraction completed using method: {extraction_method}")
+        logger.info(f"📊 Extracted sections: {list(cv_data.keys())}")
+
+        # Clean up uploaded file
+        logger.info("🧹 Cleaning up uploaded file...")
+        if filepath.exists():
             filepath.unlink()
-            logger.info("🗑️  Temporary file deleted")
-        except Exception as e:
-            logger.warning(f"⚠️  Could not delete temp file: {str(e)}")
+            logger.info("✅ File cleaned up")
 
         return {
             "success": True,
             "message": "CV parsed successfully",
-            "extraction_method": extraction_method,
             "data": cv_data,
-            "raw_text_length": len(raw_text)
+            "extraction_method": extraction_method,
+            "file_info": {
+                "filename": file.filename,
+                "size_mb": round(file_size_mb, 2),
+                "type": file_ext
+            }
         }
 
     except HTTPException as he:
-        logger.error(f"❌ HTTP Exception: {he.detail}")
+        # Clean up file if it exists
+        if cv_data is None and 'filepath' in locals() and Path(filepath).exists():
+            Path(filepath).unlink()
         raise he
     except Exception as e:
-        logger.error(f"❌ Unexpected error: {str(e)}")
-        logger.error(f"❌ Traceback: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"Error processing CV: {str(e)}")
-
-
-@app.get("/api/stats")
-async def get_stats():
-    """Get upload statistics"""
-    upload_count = 0
-    
-    if UPLOAD_FOLDER.exists():
-        upload_count = len(list(UPLOAD_FOLDER.glob("*")))
-    
-    return {
-        "total_uploads": upload_count,
-        "upload_folder": str(UPLOAD_FOLDER),
-        "max_file_size_mb": MAX_FILE_SIZE / (1024 * 1024),
-        "allowed_extensions": list(ALLOWED_EXTENSIONS)
-    }
+        # Clean up file if it exists
+        if 'filepath' in locals() and Path(filepath).exists():
+            Path(filepath).unlink()
+        logger.error(f"❌ Error processing CV: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.delete("/api/cleanup")
@@ -587,6 +593,160 @@ async def compare_extraction_methods(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ============================================================================
+# PORTFOLIO GENERATOR ENDPOINTS
+# ============================================================================
+
+@app.post("/api/verify-github-token")
+async def verify_github_token(request: GitHubVerifyRequest):
+    """
+    Verify GitHub personal access token
+    
+    Args:
+        request: GitHubVerifyRequest with token
+        
+    Returns:
+        Verification status and user info
+    """
+    try:
+        if not GITHUB_PORTFOLIO_AVAILABLE:
+            raise HTTPException(
+                status_code=503,
+                detail="GitHub Portfolio Generator not available. Please ensure github_portfolio_generator.py is in the backend directory."
+            )
+        
+        logger.info("🔐 Verifying GitHub token...")
+        generator = GitHubPortfolioGenerator(github_token=request.github_token)
+        result = generator.verify_token()
+        
+        if result.get("success"):
+            logger.info(f"✅ Token verified for user: {result.get('username')}")
+            return {
+                "success": True,
+                "message": "GitHub token verified successfully",
+                "data": result
+            }
+        else:
+            logger.error(f"❌ Token verification failed: {result.get('error')}")
+            return {
+                "success": False,
+                "error": result.get("error", "Token verification failed")
+            }
+            
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error verifying GitHub token: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/deploy-portfolio")
+async def deploy_portfolio(request: PortfolioDeployRequest):
+    """
+    Deploy portfolio to GitHub Pages
+    
+    Args:
+        request: PortfolioDeployRequest with token, username, and CV data
+        
+    Returns:
+        Deployment status and portfolio URL
+    """
+    try:
+        logger.info("="*60)
+        logger.info("🚀 Portfolio Deployment Request Received")
+        logger.info("="*60)
+        
+        if not GITHUB_PORTFOLIO_AVAILABLE:
+            raise HTTPException(
+                status_code=503,
+                detail="GitHub Portfolio Generator not available"
+            )
+        
+        # Validate CV data
+        if not request.cv_data:
+            raise HTTPException(status_code=400, detail="CV data is required")
+        
+        logger.info(f"👤 Username: {request.github_username}")
+        logger.info(f"📦 Repository: {request.repo_name or 'default'}")
+        
+        # Initialize generator
+        generator = GitHubPortfolioGenerator(github_token=request.github_token)
+        
+        # Deploy portfolio
+        logger.info(f"🚀 Deploying portfolio for user: {request.github_username}")
+        result = generator.deploy_portfolio(
+            cv_data=request.cv_data,
+            username=request.github_username,
+            repo_name=request.repo_name
+        )
+        
+        if result.get("success"):
+            logger.info(f"✅ Portfolio deployed: {result.get('portfolio_url')}")
+            return {
+                "success": True,
+                "message": result.get("message"),
+                "data": {
+                    "portfolio_url": result.get("portfolio_url"),
+                    "repo_name": result.get("repo_name"),
+                    "note": result.get("note")
+                }
+            }
+        else:
+            logger.error(f"❌ Portfolio deployment failed: {result.get('error')}")
+            raise HTTPException(
+                status_code=500, 
+                detail=result.get("error", "Portfolio deployment failed")
+            )
+            
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error deploying portfolio: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/preview-portfolio")
+async def preview_portfolio(cv_data: dict = Body(...)):
+    """
+    Generate portfolio HTML preview without deploying
+    
+    Args:
+        cv_data: Extracted CV data
+        
+    Returns:
+        Generated HTML content
+    """
+    try:
+        if not GITHUB_PORTFOLIO_AVAILABLE:
+            raise HTTPException(
+                status_code=503,
+                detail="GitHub Portfolio Generator not available"
+            )
+        
+        logger.info("👁️  Generating portfolio preview...")
+        
+        # Use a dummy token since we're just generating HTML
+        generator = GitHubPortfolioGenerator(github_token="dummy")
+        html_content = generator.generate_portfolio_html(cv_data)
+        
+        logger.info(f"✅ Preview generated ({len(html_content)} characters)")
+        
+        return {
+            "success": True,
+            "message": "Portfolio preview generated",
+            "html": html_content
+        }
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error generating portfolio preview: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == '__main__':
     import uvicorn
     
@@ -597,6 +757,7 @@ if __name__ == '__main__':
     print(f"📝 Allowed extensions: {', '.join(ALLOWED_EXTENSIONS)}")
     print(f"📊 Max file size: {MAX_FILE_SIZE / (1024 * 1024)}MB")
     print(f"🌍 CORS enabled for: {', '.join(ALLOWED_ORIGINS)}")
+    print(f"🎨 Portfolio Generator: {'✅ Available' if GITHUB_PORTFOLIO_AVAILABLE else '❌ Not Available'}")
     print("=" * 50)
     print("✅ Server running on http://localhost:8000")
     print("📚 API Docs: http://localhost:8000/docs")

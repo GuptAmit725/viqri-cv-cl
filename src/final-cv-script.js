@@ -9,6 +9,47 @@ function init() {
     generateCV();
 }
 
+// Add this to final-cv-script.js after the init() function
+
+// Portfolio Generator Integration
+function showPortfolioButton() {
+    const cvData = localStorage.getItem('cvData');
+    
+    if (!cvData || cvData === '{}') {
+        return; // No CV data, don't show button
+    }
+    
+    // Add portfolio button to the print-actions div
+    const printActions = document.querySelector('.print-actions');
+    if (printActions && !document.getElementById('portfolioBtn')) {
+        const portfolioBtn = document.createElement('button');
+        portfolioBtn.id = 'portfolioBtn';
+        portfolioBtn.className = 'btn-primary';
+        portfolioBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+            </svg>
+            Create GitHub Portfolio
+        `;
+        portfolioBtn.onclick = function() {
+            window.location.href = 'portfolio-wizard.html';
+        };
+        
+        // Insert before the "Download PDF" button
+        const downloadBtn = printActions.querySelector('.btn-primary');
+        if (downloadBtn) {
+            printActions.insertBefore(portfolioBtn, downloadBtn);
+        } else {
+            printActions.appendChild(portfolioBtn);
+        }
+    }
+}
+
+// Call on page load
+window.addEventListener('DOMContentLoaded', showPortfolioButton);
+
 function loadData() {
     try {
         cvData = JSON.parse(localStorage.getItem('cvData') || '{}');

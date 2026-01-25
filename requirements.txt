@@ -9,3 +9,5 @@ pydantic==2.12.5
 python-dotenv==1.2.1
 google-generativeai==0.8.3
 pytest
+requests==2.31.0
+PyGithub==2.1.1

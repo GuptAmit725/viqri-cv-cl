@@ -75,6 +75,8 @@ else:
     # Default allowed origins
     ALLOWED_ORIGINS = [
         "https://guptamit725.github.io",  # GitHub Pages - UPDATE WITH YOUR USERNAME
+        "https://mysanvi.in",              # Custom domain - HTTPS
+        "http://mysanvi.in",               # Custom domain - HTTP
         "http://localhost:8000",       # Local development
         "http://127.0.0.1:8000",      # Local development alternative
         "http://localhost:3000",       # Alternative local port

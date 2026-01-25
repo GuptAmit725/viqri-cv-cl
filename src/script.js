@@ -34,7 +34,7 @@ let selectedFile = null;
 let cvData = null;
 
 // API Configuration
-const API_URL = 'http://localhost:8000';
+const API_URL = 'https://viqri-cv-api-5u7hdc64va-uc.a.run.app'//'http://localhost:8000';
 
 // Initialize
 init();

@@ -60,14 +60,40 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS Configuration
+# ============================================================================
+# CORS Configuration - UPDATED FOR PRODUCTION
+# ============================================================================
+
+# Get allowed origins from environment variable, or use default list
+ALLOWED_ORIGINS_ENV = os.getenv("ALLOWED_ORIGINS", "")
+
+if ALLOWED_ORIGINS_ENV:
+    # Parse comma-separated origins from environment
+    ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS_ENV.split(",")]
+    logger.info(f"🌍 CORS origins from environment: {ALLOWED_ORIGINS}")
+else:
+    # Default allowed origins
+    ALLOWED_ORIGINS = [
+        "https://GuptAmit725.github.io",  # GitHub Pages - UPDATE WITH YOUR USERNAME
+        "http://localhost:8000",       # Local development
+        "http://127.0.0.1:8000",      # Local development alternative
+        "http://localhost:3000",       # Alternative local port
+        "https://viqri-cv-api-5u7hdc64va-uc.a.run.app"
+    ]
+    logger.info(f"🌍 CORS using default origins: {ALLOWED_ORIGINS}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
+
+logger.info("✅ CORS middleware configured")
+
+# ============================================================================
 
 # Configuration
 UPLOAD_FOLDER = Path("uploads")
@@ -137,7 +163,9 @@ async def root():
         "message": "Viqri CV API",
         "version": "1.0.0",
         "docs": "/docs",
-        "health": "/health"
+        "health": "/health",
+        "cors_enabled": True,
+        "allowed_origins": len(ALLOWED_ORIGINS)
     }
 
 
@@ -147,7 +175,8 @@ async def health_check():
     return {
         "status": "healthy",
         "message": "Viqri CV Backend is running",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "cors_configured": True
     }
 
 
@@ -251,182 +280,81 @@ async def upload_cv(file: UploadFile = File(...)):
         logger.info("🤖 Starting CV extraction...")
         logger.info("="*60)
         
-        # Try Gemini first (best)
-        google_api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
-        logger.info(f"🔑 Checking for Gemini API key... {'Found' if google_api_key else 'Not found'}")
-        
-        if google_api_key:
-            logger.info("🔷 Attempting Gemini extraction...")
+        # Try Gemini first
+        if GOOGLE_API_KEY:
             try:
-                extractor = GeminiCVExtractor(api_key=google_api_key)
-                logger.info("✅ Gemini extractor initialized")
-                cv_data = extractor.extract_cv_info(raw_text)
+                logger.info("🎯 Attempting extraction with Gemini API...")
+                gemini_extractor = GeminiCVExtractor(api_key=GOOGLE_API_KEY)
+                cv_data = gemini_extractor.extract_cv_info(raw_text)
                 extraction_method = "gemini"
-                logger.info("✅ Gemini extraction successful!")
-                logger.info(f"📊 Extracted data keys: {list(cv_data.keys())}")
+                logger.info("✅ Successfully extracted CV info using Gemini")
             except Exception as e:
-                logger.error(f"❌ Gemini extraction failed: {str(e)}")
-                logger.error(f"Traceback: {traceback.format_exc()}")
+                logger.warning(f"⚠️  Gemini extraction failed: {str(e)}")
+                logger.warning(f"⚠️  Error details: {traceback.format_exc()}")
                 cv_data = None
-        else:
-            logger.warning("⚠️  No Gemini API key, skipping Gemini extraction")
         
         # Fallback to Groq if Gemini failed
-        if cv_data is None:
-            logger.info("🔶 Gemini failed or unavailable, trying Groq...")
-            groq_api_key = os.getenv("GROQ_API_KEY")
-            logger.info(f"🔑 Checking for Groq API key... {'Found' if groq_api_key else 'Not found'}")
-            
-            if groq_api_key and GROQ_AVAILABLE:
-                logger.info("🔶 Attempting Groq extraction...")
-                try:
-                    extractor = LLMCVExtractor(api_key=groq_api_key)
-                    logger.info("✅ Groq extractor initialized")
-                    cv_data = extractor.extract_cv_info(raw_text)
-                    extraction_method = "groq"
-                    logger.info("✅ Groq extraction successful!")
-                    logger.info(f"📊 Extracted data keys: {list(cv_data.keys())}")
-                except Exception as e:
-                    logger.error(f"❌ Groq extraction failed: {str(e)}")
-                    logger.error(f"Traceback: {traceback.format_exc()}")
-                    cv_data = None
-            else:
-                logger.warning("⚠️  Groq unavailable or no API key")
+        if cv_data is None and GROQ_API_KEY and GROQ_AVAILABLE:
+            try:
+                logger.info("🎯 Attempting extraction with Groq API (fallback)...")
+                groq_extractor = LLMCVExtractor(api_key=GROQ_API_KEY)
+                cv_data = groq_extractor.extract_cv_info(raw_text)
+                extraction_method = "groq"
+                logger.info("✅ Successfully extracted CV info using Groq")
+            except Exception as e:
+                logger.warning(f"⚠️  Groq extraction failed: {str(e)}")
+                logger.warning(f"⚠️  Error details: {traceback.format_exc()}")
+                cv_data = None
         
         # Final fallback to regex
         if cv_data is None:
-            logger.info("🔸 Both AI methods failed, using regex fallback...")
-            try:
-                cv_data = extract_cv_info_regex(raw_text)
-                extraction_method = "regex"
-                logger.info("✅ Regex extraction successful!")
-                logger.info(f"📊 Extracted data keys: {list(cv_data.keys())}")
-            except Exception as e:
-                logger.error(f"❌ Even regex extraction failed: {str(e)}")
-                logger.error(f"Traceback: {traceback.format_exc()}")
-                raise HTTPException(
-                    status_code=500,
-                    detail="All extraction methods failed. Please try a different file."
-                )
+            logger.info("📝 Using regex fallback extraction...")
+            cv_data = extract_cv_info_regex(raw_text)
+            extraction_method = "regex"
+            logger.info("✅ Extracted CV info using regex patterns")
         
-        logger.info(f"✅ Final extraction method: {extraction_method}")
-        
-        # Verify cv_data is valid
-        if cv_data is None:
-            logger.error("❌ cv_data is None after all extraction attempts!")
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to extract CV data"
-            )
-        
-        if not isinstance(cv_data, dict):
-            logger.error(f"❌ cv_data is not a dict: {type(cv_data)}")
-            raise HTTPException(
-                status_code=500,
-                detail="Invalid CV data format"
-            )
-
-        # Add metadata
-        logger.info("📦 Adding metadata...")
-        cv_data['metadata'] = {
-            'original_filename': file.filename,
-            'file_size': len(contents),
-            'file_type': file_ext,
-            'upload_timestamp': datetime.now().isoformat(),
-            'processed': True,
-            'extraction_method': extraction_method
-        }
-        
-        logger.info("✅ Metadata added")
+        logger.info(f"✅ Extraction method used: {extraction_method}")
         logger.info("="*60)
-        logger.info("✅ CV PROCESSING COMPLETE!")
+        logger.info("📊 Extraction Summary:")
+        logger.info(f"   Method: {extraction_method}")
+        logger.info(f"   Name: {cv_data.get('personal_info', {}).get('name', 'Not found')}")
+        logger.info(f"   Email: {cv_data.get('personal_info', {}).get('email', 'Not found')}")
+        logger.info(f"   Experience items: {len(cv_data.get('experience', []))}")
+        logger.info(f"   Education items: {len(cv_data.get('education', []))}")
+        logger.info(f"   Skills found: {len(cv_data.get('skills', {}).get('programming_languages', []))}")
         logger.info("="*60)
 
-        # Return the extracted data
-        response = {
+        # Clean up the file
+        try:
+            filepath.unlink()
+            logger.info("🗑️  Temporary file deleted")
+        except Exception as e:
+            logger.warning(f"⚠️  Could not delete temp file: {str(e)}")
+
+        return {
             "success": True,
-            "message": "CV processed successfully",
-            "data": cv_data
+            "message": "CV parsed successfully",
+            "extraction_method": extraction_method,
+            "data": cv_data,
+            "raw_text_length": len(raw_text)
         }
-        logger.info(f"📤 Returning response with {len(str(response))} characters")
-        return response
 
     except HTTPException as he:
         logger.error(f"❌ HTTP Exception: {he.detail}")
         raise he
     except Exception as e:
-        logger.error("="*60)
-        logger.error("❌ UNEXPECTED ERROR IN UPLOAD")
-        logger.error("="*60)
-        logger.error(f"Error type: {type(e).__name__}")
-        logger.error(f"Error message: {str(e)}")
-        logger.error(f"Full traceback:\n{traceback.format_exc()}")
-        logger.error("="*60)
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-
-
-@app.post("/api/test-extraction")
-async def test_extraction(file: UploadFile = File(...)):
-    """
-    Test endpoint to see raw extracted text
-    Useful for debugging
-    
-    Args:
-        file: Uploaded CV file
-        
-    Returns:
-        Raw extracted text and metadata
-    """
-    try:
-        if not file:
-            raise HTTPException(status_code=400, detail="No file provided")
-
-        if not allowed_file(file.filename):
-            raise HTTPException(status_code=400, detail="Invalid file type")
-
-        # Check file size
-        contents = await file.read()
-        if len(contents) > MAX_FILE_SIZE:
-            raise HTTPException(status_code=413, detail="File too large")
-
-        await file.seek(0)
-
-        # Create unique filename
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        original_filename = file.filename.replace(" ", "_")
-        unique_filename = f"{timestamp}_{original_filename}"
-        filepath = UPLOAD_FOLDER / unique_filename
-
-        # Save file
-        with open(filepath, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        file_ext = get_file_extension(file.filename)
-
-        if file_ext == 'pdf':
-            raw_text = parse_pdf(str(filepath))
-        elif file_ext in ['doc', 'docx']:
-            raw_text = parse_docx(str(filepath))
-        else:
-            raise HTTPException(status_code=400, detail="Unsupported format")
-
-        return {
-            "success": True,
-            "raw_text": raw_text,
-            "filename": file.filename,
-            "length": len(raw_text)
-        }
-
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"❌ Unexpected error: {str(e)}")
+        logger.error(f"❌ Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error processing CV: {str(e)}")
 
 
 @app.get("/api/stats")
 async def get_stats():
-    """Get API statistics"""
-    upload_count = len(list(UPLOAD_FOLDER.glob("*"))) if UPLOAD_FOLDER.exists() else 0
+    """Get upload statistics"""
+    upload_count = 0
+    
+    if UPLOAD_FOLDER.exists():
+        upload_count = len(list(UPLOAD_FOLDER.glob("*")))
     
     return {
         "total_uploads": upload_count,
@@ -666,6 +594,7 @@ if __name__ == '__main__':
     print(f"📁 Upload folder: {UPLOAD_FOLDER}")
     print(f"📝 Allowed extensions: {', '.join(ALLOWED_EXTENSIONS)}")
     print(f"📊 Max file size: {MAX_FILE_SIZE / (1024 * 1024)}MB")
+    print(f"🌍 CORS enabled for: {', '.join(ALLOWED_ORIGINS)}")
     print("=" * 50)
     print("✅ Server running on http://localhost:8000")
     print("📚 API Docs: http://localhost:8000/docs")

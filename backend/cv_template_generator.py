@@ -98,17 +98,68 @@ class CVTemplateGenerator:
             # Try to extract JSON from response
             logger.info("📊 Parsing JSON response...")
             try:
-                template_data = json.loads(response_content)
+                # First, try to extract JSON from markdown code blocks
+                if '```json' in response_content or '```' in response_content:
+                    logger.info("📝 Detected markdown code blocks, extracting JSON...")
+                    # Find JSON content between ```json and ```
+                    json_start = response_content.find('```json')
+                    if json_start == -1:
+                        json_start = response_content.find('```')
+                    
+                    if json_start != -1:
+                        # Move past the opening ```json or ```
+                        json_start = response_content.find('\n', json_start) + 1
+                        json_end = response_content.find('```', json_start)
+                        
+                        if json_end != -1:
+                            json_str = response_content[json_start:json_end].strip()
+                            logger.info(f"📊 Extracted JSON string ({len(json_str)} chars)")
+                            
+                            # Try to repair common JSON issues
+                            json_str = self._repair_json(json_str)
+                            
+                            template_data = json.loads(json_str)
+                        else:
+                            # No closing ```, try to parse the whole thing
+                            template_data = json.loads(response_content)
+                    else:
+                        # No markdown blocks found, parse directly
+                        template_data = json.loads(response_content)
+                else:
+                    # No markdown formatting, parse directly
+                    template_data = json.loads(response_content)
+                
                 logger.info("✅ JSON parsed successfully")
                 logger.info(f"📋 Template keys: {list(template_data.keys())}")
+                
             except json.JSONDecodeError as je:
                 logger.warning(f"⚠️  JSON decode failed: {str(je)}")
-                logger.warning("📝 Using raw response as recommendations")
-                # If response is not JSON, structure it
-                template_data = {
-                    "recommendations": response_content,
-                    "success": True
-                }
+                logger.warning(f"📍 Error at character {je.pos}: {je.msg}")
+                logger.warning("📝 Attempting fallback extraction...")
+                
+                # Fallback: try to find any JSON object in the response
+                try:
+                    json_start_idx = response_content.find('{')
+                    json_end_idx = response_content.rfind('}') + 1
+                    
+                    if json_start_idx != -1 and json_end_idx > json_start_idx:
+                        json_str = response_content[json_start_idx:json_end_idx]
+                        
+                        # Try to repair the JSON
+                        json_str = self._repair_json(json_str)
+                        
+                        template_data = json.loads(json_str)
+                        logger.info("✅ JSON extracted successfully via fallback")
+                    else:
+                        raise ValueError("No JSON object found in response")
+                        
+                except (json.JSONDecodeError, ValueError) as e:
+                    logger.warning(f"⚠️  Fallback extraction failed: {str(e)}")
+                    logger.warning("📝 Using simplified template structure")
+                    
+                    # Create a minimal but valid structure
+                    template_data = self._create_fallback_template(cv_data, target_job, target_location)
+                    logger.info("✅ Created fallback template structure")
             
             logger.info("="*60)
             logger.info("✅ Template Generation Complete")
@@ -128,6 +179,110 @@ class CVTemplateGenerator:
                 "success": False,
                 "error": str(e)
             }
+    
+    def _repair_json(self, json_str: str) -> str:
+        """
+        Attempt to repair common JSON formatting issues
+        
+        Args:
+            json_str: JSON string that may have errors
+            
+        Returns:
+            Repaired JSON string
+        """
+        import re
+        
+        # Remove any trailing commas before closing braces/brackets
+        json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+        
+        # Fix single quotes to double quotes (common LLM mistake)
+        # But be careful not to replace quotes inside strings
+        # This is a simple approach - may need refinement
+        
+        # Remove comments (// or /* */)
+        json_str = re.sub(r'//.*?\n', '\n', json_str)
+        json_str = re.sub(r'/\*.*?\*/', '', json_str, flags=re.DOTALL)
+        
+        # Remove any non-printable characters
+        json_str = ''.join(char for char in json_str if char.isprintable() or char in '\n\r\t')
+        
+        return json_str
+    
+    def _create_fallback_template(
+        self,
+        cv_data: Dict[str, Any],
+        target_job: str,
+        target_location: str
+    ) -> Dict[str, Any]:
+        """
+        Create a fallback template when JSON parsing fails
+        
+        Args:
+            cv_data: CV data
+            target_job: Target job
+            target_location: Target location
+            
+        Returns:
+            Minimal valid template structure
+        """
+        # Extract skills
+        skills = cv_data.get('skills', {})
+        all_skills = []
+        for skill_list in skills.values():
+            if isinstance(skill_list, list):
+                all_skills.extend(skill_list)
+        
+        # Extract experience
+        experience = cv_data.get('experience', [])
+        years_experience = len(experience)
+        
+        return {
+            "template_structure": {
+                "format": "reverse-chronological",
+                "length": "2 pages",
+                "sections": [
+                    "Professional Summary",
+                    "Work Experience",
+                    "Education",
+                    "Skills",
+                    "Projects",
+                    "Certifications"
+                ]
+            },
+            "content_recommendations": {
+                "summary": f"Experienced professional with {years_experience} years in {target_job} field. Seeking opportunities in {target_location}.",
+                "key_skills": all_skills[:15],
+                "missing_skills": [],
+                "keywords": all_skills[:10]
+            },
+            "location_specific": {
+                "format_preferences": "Professional format suitable for local market",
+                "cultural_considerations": ["Highlight achievements and results"],
+                "common_requirements": ["Relevant experience and skills"]
+            },
+            "industry_insights": {
+                "trends": f"Growing demand for {target_job} roles",
+                "sought_after_skills": all_skills[:10],
+                "red_flags": []
+            },
+            "action_items": {
+                "immediate": [
+                    "Tailor CV for target role",
+                    "Highlight relevant experience",
+                    "Optimize for ATS"
+                ],
+                "important": [
+                    "Add quantifiable achievements",
+                    "Update skills section",
+                    "Proofread thoroughly"
+                ],
+                "nice_to_have": [
+                    "Add portfolio links",
+                    "Include recommendations"
+                ]
+            },
+            "success": True
+        }
     
     def _create_prompt(
         self,
@@ -253,6 +408,14 @@ CRITICAL REQUIREMENTS:
 5. Ensure all recommendations are optimized for both ATS systems and human recruiters
 6. Use actual data points and metrics from the experience section
 7. Include ALL relevant sections from the original CV in your recommendations
+
+IMPORTANT JSON FORMATTING:
+- Return ONLY valid JSON (no markdown code blocks, no explanatory text)
+- Use double quotes for strings, not single quotes
+- No trailing commas before closing braces or brackets
+- No comments in the JSON
+- Ensure all strings are properly escaped
+- Test that your response is valid JSON before returning
 """
         
         return prompt

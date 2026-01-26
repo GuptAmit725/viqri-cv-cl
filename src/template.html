@@ -66,6 +66,7 @@
                         <li><a href="#location" class="nav-link">Location Insights</a></li>
                         <li><a href="#industry" class="nav-link">Industry Trends</a></li>
                         <li><a href="#actions" class="nav-link">Action Items</a></li>
+                        <li><a href="#matching-jobs" class="nav-link">Matching Jobs</a></li>
                         <li><a href="#preview" class="nav-link">CV Preview</a></li>
                     </ul>
                 </nav>
@@ -167,6 +168,130 @@
                             <div class="cv-document">
                                 <div id="cvPreviewContent"></div>
                             </div>
+                        </div>
+
+                        <!-- Portfolio CTA -->
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 48px; margin-top: 48px; color: white; position: relative; overflow: hidden;">
+                            <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; filter: blur(60px);"></div>
+                            <div style="position: absolute; bottom: -30px; left: -30px; width: 150px; height: 150px; background: rgba(255,191,36,0.2); border-radius: 50%; filter: blur(50px);"></div>
+                            
+                            <div style="position: relative; z-index: 1;">
+                                <div style="display: inline-block; background: rgba(251,191,36,0.3); border: 1px solid rgba(251,191,36,0.5); border-radius: 30px; padding: 8px 20px; margin-bottom: 20px;">
+                                    <span style="font-size: 14px; font-weight: 600;">🚀 TAKE THE NEXT STEP</span>
+                                </div>
+                                
+                                <h3 style="font-size: 32px; font-weight: 700; margin: 0 0 16px 0; line-height: 1.3;">
+                                    Your CV is Optimized.<br/>
+                                    Now Make It <span style="color: #fbbf24;">Unforgettable</span>.
+                                </h3>
+                                
+                                <p style="font-size: 18px; opacity: 0.95; margin: 0 0 32px 0; line-height: 1.6; max-width: 700px;">
+                                    Deploy a stunning portfolio website in <strong>60 seconds</strong>. Stand out from hundreds of PDF attachments—show recruiters you mean business.
+                                </p>
+
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 32px;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 24px;">⚡</span>
+                                        <span style="font-size: 14px;">Live in 60 seconds</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 24px;">🎨</span>
+                                        <span style="font-size: 14px;">Professional design</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 24px;">🔗</span>
+                                        <span style="font-size: 14px;">yourname.github.io</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 24px;">💰</span>
+                                        <span style="font-size: 14px;">Free hosting forever</span>
+                                    </div>
+                                </div>
+
+                                <button onclick="window.location.href='portfolio-wizard.html'" style="background: white; color: #667eea; padding: 18px 40px; border: none; border-radius: 12px; font-size: 18px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 15px 40px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.2)';">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    Create Portfolio Now
+                                    <span style="font-size: 20px; margin-left: 4px;">→</span>
+                                </button>
+
+                                <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.2);">
+                                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 12px; font-weight: 600;">What you'll get instantly:</div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 14px;">
+                                        <span style="background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px;">
+                                            <span>✓</span> Live portfolio website
+                                        </span>
+                                        <span style="background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px;">
+                                            <span>✓</span> GitHub deployment
+                                        </span>
+                                        <span style="background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px;">
+                                            <span>✓</span> Mobile responsive
+                                        </span>
+                                        <span style="background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px;">
+                                            <span>✓</span> One-click updates
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Matching Jobs Section -->
+                    <section id="matching-jobs" class="content-section">
+                        <h2 class="section-title">🎯 Top Matching Jobs</h2>
+                        
+                        <!-- Loading State -->
+                        <div class="job-loading-state" id="jobLoadingState" style="display: none;">
+                            <div class="spinner-large"></div>
+                            <p>Finding the best job matches for you...</p>
+                            <p class="loading-subtext">This may take 15-30 seconds</p>
+                        </div>
+                        
+                        <!-- Jobs Grid -->
+                        <div id="jobsContainer" style="display: none;">
+                            <div class="jobs-header">
+                                <p class="jobs-found-text" id="jobsFoundText"></p>
+                                <button class="btn-secondary btn-small" id="refreshJobsBtn">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="23 4 23 10 17 10"></polyline>
+                                        <polyline points="1 20 1 14 7 14"></polyline>
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                    </svg>
+                                    Refresh
+                                </button>
+                            </div>
+                            
+                            <div class="jobs-grid" id="jobsGrid"></div>
+                            
+                            <div class="insights-panel" id="insightsPanel">
+                                <h3 class="insights-title">💡 Insights & Recommendations</h3>
+                                <div class="insights-content" id="insightsContent"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Error State -->
+                        <div class="job-error-state" id="jobErrorState" style="display: none;">
+                            <div class="error-icon">⚠️</div>
+                            <h3>Unable to Fetch Jobs</h3>
+                            <p id="jobErrorMessage"></p>
+                            <button class="btn-primary" id="retryJobsBtn">Try Again</button>
+                        </div>
+                        
+                        <!-- Initial State -->
+                        <div class="job-initial-state" id="jobInitialState">
+                            <div class="initial-icon">🔍</div>
+                            <h3>Ready to Find Your Next Opportunity?</h3>
+                            <p>Click the button below to search for top matching jobs based on your CV and target role.</p>
+                            <button class="btn-primary" id="searchJobsBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                Search for Jobs
+                            </button>
+                            <p class="search-note">We'll find the top 10 jobs that match your profile</p>
                         </div>
                     </section>
 

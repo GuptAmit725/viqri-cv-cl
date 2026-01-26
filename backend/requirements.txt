@@ -11,3 +11,7 @@ google-generativeai==0.8.3
 pytest
 requests==2.31.0
 PyGithub==2.1.1
+httpx>=0.27.0
+beautifulsoup4>=4.12.0
+lxml>=5.1.0
+groq>=0.4.0

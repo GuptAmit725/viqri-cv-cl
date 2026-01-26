@@ -9,47 +9,6 @@ function init() {
     generateCV();
 }
 
-// Add this to final-cv-script.js after the init() function
-
-// Portfolio Generator Integration
-function showPortfolioButton() {
-    const cvData = localStorage.getItem('cvData');
-    
-    if (!cvData || cvData === '{}') {
-        return; // No CV data, don't show button
-    }
-    
-    // Add portfolio button to the print-actions div
-    const printActions = document.querySelector('.print-actions');
-    if (printActions && !document.getElementById('portfolioBtn')) {
-        const portfolioBtn = document.createElement('button');
-        portfolioBtn.id = 'portfolioBtn';
-        portfolioBtn.className = 'btn-primary';
-        portfolioBtn.innerHTML = `
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                <path d="M2 17l10 5 10-5"/>
-                <path d="M2 12l10 5 10-5"/>
-            </svg>
-            Create GitHub Portfolio
-        `;
-        portfolioBtn.onclick = function() {
-            window.location.href = 'portfolio-wizard.html';
-        };
-        
-        // Insert before the "Download PDF" button
-        const downloadBtn = printActions.querySelector('.btn-primary');
-        if (downloadBtn) {
-            printActions.insertBefore(portfolioBtn, downloadBtn);
-        } else {
-            printActions.appendChild(portfolioBtn);
-        }
-    }
-}
-
-// Call on page load
-window.addEventListener('DOMContentLoaded', showPortfolioButton);
-
 function loadData() {
     try {
         cvData = JSON.parse(localStorage.getItem('cvData') || '{}');
@@ -285,3 +244,129 @@ function showError() {
 
 console.log('📄 Final CV Page Ready!');
 console.log('CV Data:', cvData);
+
+// ============================================================================
+// PDF Download Function
+// ============================================================================
+
+async function downloadPDF() {
+    const button = document.getElementById('downloadPdfBtn');
+    const originalHTML = button.innerHTML;
+    
+    try {
+        // Show loading state
+        button.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+                <circle cx="12" cy="12" r="10"></circle>
+            </svg>
+            Generating PDF...
+        `;
+        button.disabled = true;
+        
+        console.log('📄 Starting PDF generation...');
+        
+        // Get CV container
+        const cvContainer = document.getElementById('cvContainer');
+        const printActions = document.querySelector('.print-actions');
+        
+        // Hide buttons temporarily
+        if (printActions) printActions.style.display = 'none';
+        
+        // Generate canvas from HTML
+        console.log('📸 Capturing CV as image...');
+        const canvas = await html2canvas(cvContainer, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            windowWidth: cvContainer.scrollWidth,
+            windowHeight: cvContainer.scrollHeight
+        });
+        
+        // Show buttons again
+        if (printActions) printActions.style.display = 'flex';
+        
+        console.log('✅ Image captured, creating PDF...');
+        
+        // Create PDF
+        const { jsPDF } = window.jspdf;
+        const imgWidth = 210; // A4 width in mm
+        const pageHeight = 297; // A4 height in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        let position = 0;
+        
+        // Add image to PDF (handle multiple pages if needed)
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        
+        // Add extra pages if content is longer
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+        
+        // Generate filename
+        const name = cvData?.personal_info?.name || 'CV';
+        const jobTitle = jobDetails?.target_job || '';
+        const cleanName = name.replace(/[^a-zA-Z0-9]/g, '_');
+        const cleanJob = jobTitle.replace(/[^a-zA-Z0-9]/g, '_');
+        const filename = cleanJob ? `${cleanName}_${cleanJob}_CV.pdf` : `${cleanName}_CV.pdf`;
+        
+        console.log('💾 Downloading PDF:', filename);
+        
+        // Download PDF
+        pdf.save(filename);
+        
+        console.log('✅ PDF downloaded successfully!');
+        
+        // Reset button after short delay
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+        }, 1000);
+        
+    } catch (error) {
+        console.error('❌ Error generating PDF:', error);
+        alert('Failed to generate PDF. Please try the following:\n\n1. Refresh the page and try again\n2. Use the Print button (Ctrl+P) and save as PDF\n3. Check if your browser blocks pop-ups');
+        
+        // Reset button
+        button.innerHTML = originalHTML;
+        button.disabled = false;
+    }
+}
+
+// Add spinner animation to CSS
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+
+// Initialize download button on DOM load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDownloadButton);
+} else {
+    initDownloadButton();
+}
+
+function initDownloadButton() {
+    const downloadBtn = document.getElementById('downloadPdfBtn');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', downloadPDF);
+        console.log('✅ PDF download button initialized');
+    }
+}

@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Dict, Any
 import os
 from datetime import datetime
 import shutil
@@ -63,6 +63,25 @@ try:
 except Exception as e:
     GITHUB_PORTFOLIO_AVAILABLE = False
     logger.warning(f"⚠️  GitHub Portfolio Generator not available: {str(e)}")
+
+# Import LinkedIn job search components
+logger.info("📦 Importing LinkedIn job scraper...")
+try:
+    from linkedin_job_scraper import LinkedInJobScraper
+    LINKEDIN_SCRAPER_AVAILABLE = True
+    logger.info("✅ LinkedIn job scraper imported")
+except Exception as e:
+    LINKEDIN_SCRAPER_AVAILABLE = False
+    logger.warning(f"⚠️  LinkedIn job scraper not available: {str(e)}")
+
+logger.info("📦 Importing Groq job analyzer...")
+try:
+    from groq_job_analyzer import GroqJobAnalyzer
+    GROQ_JOB_ANALYZER_AVAILABLE = True
+    logger.info("✅ Groq job analyzer imported")
+except Exception as e:
+    GROQ_JOB_ANALYZER_AVAILABLE = False
+    logger.warning(f"⚠️  Groq job analyzer not available: {str(e)}")
 
 app = FastAPI(
     title="Viqri CV API",
@@ -171,6 +190,22 @@ class PortfolioDeployRequest(BaseModel):
     cv_data: dict
 
 
+class JobSearchRequest(BaseModel):
+    """Request model for job search"""
+    keywords: str
+    location: str
+    experience_level: Optional[str] = "mid-senior"
+    limit: Optional[int] = 10
+
+
+class JobAnalysisRequest(BaseModel):
+    """Request model for comprehensive job analysis"""
+    cv_data: Dict[str, Any]
+    jobs: List[Dict[str, Any]]
+    target_job: str
+    target_location: str
+
+
 def allowed_file(filename: str) -> bool:
     """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -180,6 +215,143 @@ def get_file_extension(filename: str) -> str:
     """Get file extension"""
     return filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
 
+class JobMatchRequest(BaseModel):
+    """Request model for job matching"""
+    cv_data: dict
+    job_title: str
+    location: str
+    experience_level: Optional[str] = None
+
+
+# ============================================================================
+# NEW ENDPOINT TO ADD (before if __name__ == '__main__', around line 740)
+# ============================================================================
+
+@app.post("/api/match-jobs")
+async def match_jobs(request: JobMatchRequest):
+    """
+    Find and match top LinkedIn jobs with CV
+    
+    Args:
+        request: JobMatchRequest with CV data, job title, location, and experience level
+        
+    Returns:
+        Top 10 matched jobs with summaries, insights, and match scores
+    """
+    try:
+        logger.info("="*60)
+        logger.info("🎯 Job Matching Request Received")
+        logger.info("="*60)
+        logger.info(f"📝 Job Title: {request.job_title}")
+        logger.info(f"📍 Location: {request.location}")
+        logger.info(f"👔 Experience: {request.experience_level or 'Not specified'}")
+        
+        # Check if job matching components are available
+        if not LINKEDIN_SCRAPER_AVAILABLE or not GROQ_JOB_ANALYZER_AVAILABLE:
+            missing = []
+            if not LINKEDIN_SCRAPER_AVAILABLE:
+                missing.append("LinkedIn job scraper")
+            if not GROQ_JOB_ANALYZER_AVAILABLE:
+                missing.append("Groq job analyzer")
+            
+            raise HTTPException(
+                status_code=503,
+                detail=f"Job matching feature not available. Missing: {', '.join(missing)}. Please ensure linkedin_job_scraper.py and groq_job_analyzer.py are in the backend directory."
+            )
+        
+        # Validate CV data
+        if not request.cv_data:
+            raise HTTPException(status_code=400, detail="CV data is required")
+        
+        # Step 1: Scrape LinkedIn jobs
+        logger.info("🔍 Step 1: Scraping LinkedIn jobs...")
+        scraper = LinkedInJobScraper()
+        jobs = scraper.search_jobs(
+            job_title=request.job_title,
+            location=request.location,
+            experience_level=request.experience_level,
+            max_results=10
+        )
+        
+        if not jobs:
+            logger.warning("⚠️  No jobs found")
+            return {
+                "success": False,
+                "message": "No jobs found for the specified criteria",
+                "jobs": [],
+                "insights": {
+                    "match_quality": "N/A",
+                    "recommendations": ["Try adjusting your search criteria"],
+                    "action_items": ["Broaden your job title or location search"]
+                }
+            }
+        
+        logger.info(f"✅ Found {len(jobs)} jobs")
+        
+        # Step 2: Analyze and match jobs with CV
+        logger.info("🤖 Step 2: Analyzing and matching jobs...")
+        groq_api_key = os.getenv("GROQ_API_KEY")
+        
+        if not groq_api_key:
+            logger.warning("⚠️  Groq API key not found, returning jobs without AI analysis")
+            return {
+                "success": True,
+                "message": f"Found {len(jobs)} jobs (AI analysis unavailable)",
+                "jobs": jobs,
+                "insights": {
+                    "match_quality": "Good",
+                    "average_match_score": 70.0,
+                    "recommendations": [
+                        f"Found {len(jobs)} opportunities for {request.job_title}",
+                        "Review each job to find the best fit"
+                    ],
+                    "action_items": [
+                        "Apply to top matches first",
+                        "Tailor your CV for each application"
+                    ]
+                }
+            }
+        
+        analyzer = GroqJobAnalyzer(api_key=groq_api_key)
+        result = analyzer.analyze_and_match_jobs(
+            jobs=jobs,
+            cv_data=request.cv_data,
+            job_title=request.job_title,
+            location=request.location
+        )
+        
+        if not result.get('success'):
+            logger.error(f"❌ Job matching failed: {result.get('error')}")
+            # Return jobs without matching
+            return {
+                "success": True,
+                "message": f"Found {len(jobs)} jobs (matching analysis failed)",
+                "jobs": jobs,
+                "insights": {
+                    "match_quality": "Good",
+                    "recommendations": [f"Found {len(jobs)} opportunities"],
+                    "action_items": ["Review and apply to relevant positions"]
+                }
+            }
+        
+        logger.info("✅ Job matching completed successfully")
+        logger.info(f"📊 Top match score: {result.get('summary', {}).get('top_match', 0)}")
+        logger.info(f"📊 Average match: {result.get('summary', {}).get('average_match', 0)}")
+        
+        return {
+            "success": True,
+            "message": f"Successfully matched {len(result['jobs'])} jobs",
+            "jobs": result['jobs'],
+            "insights": result['insights'],
+            "summary": result['summary']
+        }
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"❌ Error in job matching: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
 async def root():
@@ -203,7 +375,12 @@ async def health_check():
         "message": "Viqri CV Backend is running",
         "timestamp": datetime.now().isoformat(),
         "cors_configured": True,
-        "portfolio_generator": GITHUB_PORTFOLIO_AVAILABLE
+        "portfolio_generator": GITHUB_PORTFOLIO_AVAILABLE,
+        "job_matching": {
+            "linkedin_scraper": LINKEDIN_SCRAPER_AVAILABLE,
+            "groq_analyzer": GROQ_JOB_ANALYZER_AVAILABLE,
+            "available": LINKEDIN_SCRAPER_AVAILABLE and GROQ_JOB_ANALYZER_AVAILABLE
+        }
     }
 
 
@@ -287,6 +464,7 @@ async def upload_cv(file: UploadFile = File(...)):
         if file_ext == 'pdf':
             logger.info("Using PDF parser...")
             raw_text = parse_pdf(str(filepath))
+            print(f"EXTRACTED RAW TEXT FROM PYTHON LIBRARY: {raw_text}")
         elif file_ext in ['doc', 'docx']:
             logger.info("Using DOCX parser...")
             raw_text = parse_docx(str(filepath))
@@ -306,6 +484,7 @@ async def upload_cv(file: UploadFile = File(...)):
         if GOOGLE_API_KEY and not extraction_successful:
             try:
                 logger.info("Attempting Gemini extraction...")
+                print(f"GEMINI EXTRACTION>>>>>")
                 gemini_extractor = GeminiCVExtractor(api_key=GOOGLE_API_KEY)
                 cv_data = gemini_extractor.extract_cv_info(raw_text)
                 
@@ -320,8 +499,10 @@ async def upload_cv(file: UploadFile = File(...)):
         if GROQ_API_KEY and GROQ_AVAILABLE and not extraction_successful:
             try:
                 logger.info("Attempting Groq LLM extraction...")
-                llm_extractor = LLMCVExtractor(api_key=GROQ_API_KEY)
-                cv_data = llm_extractor.extract_cv_info(raw_text)
+                print(f"GROQ EXTRACTION>>>>>")
+                #llm_extractor = LLMCVExtractor(api_key=GROQ_API_KEY)
+                gemini_extractor = GeminiCVExtractor()
+                cv_data = gemini_extractor.extract_cv_info(raw_text) #llm_extractor.extract_cv_info(raw_text)
                 
                 if cv_data and cv_data.get("personal_info"):
                     extraction_successful = True
@@ -334,6 +515,7 @@ async def upload_cv(file: UploadFile = File(...)):
         if not extraction_successful:
             logger.info("Using regex extraction as fallback...")
             cv_data = extract_cv_info_regex(raw_text)
+            print(f"REGEX EXTRACTION>>>>>")
             extraction_method = "regex"
             logger.info("✅ Regex extraction completed")
 
@@ -745,6 +927,305 @@ async def preview_portfolio(cv_data: dict = Body(...)):
         logger.error(f"Error generating portfolio preview: {str(e)}")
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# JOB SEARCH AND ANALYSIS ENDPOINTS
+# ============================================================================
+
+@app.post("/api/jobs/search")
+async def search_linkedin_jobs(request: JobSearchRequest):
+    """
+    Search for LinkedIn jobs based on keywords and location
+    """
+    logger.info("="*60)
+    logger.info(f"🔍 Job search request: {request.keywords} in {request.location}")
+    logger.info("="*60)
+    
+    try:
+        if not LINKEDIN_SCRAPER_AVAILABLE:
+            raise HTTPException(
+                status_code=503,
+                detail="LinkedIn job scraper not available. Please install dependencies: pip install httpx beautifulsoup4 lxml"
+            )
+        
+        scraper = LinkedInJobScraper()
+        jobs = await scraper.search_jobs(
+            keywords=request.keywords,
+            location=request.location,
+            experience_level=request.experience_level,
+            limit=request.limit
+        )
+        
+        logger.info(f"✅ Found {len(jobs)} jobs")
+        
+        return JSONResponse(content={
+            "success": True,
+            "data": {
+                "jobs": jobs,
+                "count": len(jobs),
+                "query": {
+                    "keywords": request.keywords,
+                    "location": request.location,
+                    "experience_level": request.experience_level
+                }
+            }
+        })
+    
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"❌ Job search error: {str(e)}")
+        logger.error(traceback.format_exc())
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": f"Job search failed: {str(e)}"
+            }
+        )
+
+
+@app.post("/api/jobs/analyze")
+async def analyze_jobs_for_cv(request: JobAnalysisRequest):
+    """
+    Comprehensive job analysis and CV matching using Groq AI
+    """
+    logger.info("="*60)
+    logger.info("🤖 Starting comprehensive job analysis")
+    logger.info("="*60)
+    
+    try:
+        groq_api_key = os.getenv("GROQ_API_KEY")
+        if not groq_api_key:
+            raise HTTPException(
+                status_code=500,
+                detail="Groq API key not configured. Please set GROQ_API_KEY environment variable."
+            )
+        
+        if not JOB_MATCHING_AVAILABLE:
+            raise HTTPException(
+                status_code=503,
+                detail="Job analyzer not available"
+            )
+        
+        analyzer = JobMatcher(api_key=groq_api_key)
+        
+        logger.info(f"📊 Analyzing {len(request.jobs)} jobs")
+        
+        # Step 1: Summarize jobs
+        logger.info("Step 1: Summarizing job requirements...")
+        jobs_summary = await analyzer._summarize_jobs(request.jobs)
+        
+        # Step 2: Match CV to jobs
+        logger.info("Step 2: Matching CV to job requirements...")
+        match_analysis = await analyzer.match_cv_to_jobs(request.cv_data, jobs_summary)
+        
+        # Step 3: Generate comprehensive insights
+        logger.info("Step 3: Generating comprehensive insights...")
+        insights = await analyzer.generate_cv_insights(
+            cv_data=request.cv_data,
+            jobs_summary=jobs_summary,
+            match_analysis=match_analysis,
+            target_job=request.target_job,
+            target_location=request.target_location
+        )
+        
+        logger.info("✅ Analysis completed successfully")
+        
+        return JSONResponse(content={
+            "success": True,
+            "data": {
+                "jobs_summary": jobs_summary,
+                "match_analysis": match_analysis,
+                "insights": insights,
+                "metadata": {
+                    "jobs_analyzed": len(request.jobs),
+                    "target_job": request.target_job,
+                    "target_location": request.target_location,
+                    "analysis_date": datetime.now().isoformat()
+                }
+            }
+        })
+    
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"❌ Job analysis error: {str(e)}")
+        logger.error(traceback.format_exc())
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": f"Job analysis failed: {str(e)}"
+            }
+        )
+
+
+@app.post("/api/jobs/quick-match")
+async def quick_job_match(
+    cv_data: Dict[str, Any] = Body(...), 
+    target_job: str = Body(...), 
+    target_location: str = Body(...)
+):
+    """
+    Quick end-to-end: Search jobs + Analyze + Generate insights
+    This is the main endpoint used by the frontend
+    """
+    logger.info("="*60)
+    logger.info(f"🚀 Quick job match: {target_job} in {target_location}")
+    logger.info("="*60)
+    
+    try:
+        # Check availability
+        if not LINKEDIN_SCRAPER_AVAILABLE:
+            raise HTTPException(
+                status_code=503,
+                detail="LinkedIn job scraper not available. Please install dependencies."
+            )
+        
+        # Step 1: Search for jobs
+        logger.info("Step 1: Searching for relevant jobs...")
+        scraper = LinkedInJobScraper()
+        
+        experience_level = cv_data.get('experience_level') or cv_data.get('experienceLevel') or 'mid-senior'
+        
+        jobs = await scraper.search_jobs(
+            keywords=target_job,
+            location=target_location,
+            experience_level=experience_level,
+            limit=10
+        )
+        
+        logger.info(f"✅ Found {len(jobs)} jobs")
+        
+        if len(jobs) == 0:
+            return JSONResponse(content={
+                "success": True,
+                "data": {
+                    "jobs": [],
+                    "message": "No jobs found. Try different keywords or location."
+                }
+            })
+        
+        # Step 2: Analyze jobs using Groq (if available)
+        groq_api_key = os.getenv("GROQ_API_KEY")
+        
+        if not groq_api_key or not GROQ_ANALYZER_AVAILABLE:
+            logger.warning("⚠️  Groq API not available, returning jobs without analysis")
+            return JSONResponse(content={
+                "success": True,
+                "data": {
+                    "jobs": jobs,
+                    "analysis_available": False,
+                    "message": "Jobs found but AI analysis not available"
+                }
+            })
+        
+        try:
+            logger.info("Step 2: Analyzing jobs with AI...")
+            analyzer = GroqJobAnalyzer(api_key=groq_api_key)
+            
+            jobs_summary = await analyzer.summarize_jobs(jobs)
+            match_analysis = await analyzer.match_cv_to_jobs(cv_data, jobs_summary)
+            insights = await analyzer.generate_cv_insights(
+                cv_data=cv_data,
+                jobs_summary=jobs_summary,
+                match_analysis=match_analysis,
+                target_job=target_job,
+                target_location=target_location
+            )
+            
+            logger.info("✅ Complete analysis finished")
+            
+            return JSONResponse(content={
+                "success": True,
+                "data": {
+                    "jobs": jobs,
+                    "jobs_summary": jobs_summary,
+                    "match_analysis": match_analysis,
+                    "insights": insights,
+                    "analysis_available": True,
+                    "metadata": {
+                        "jobs_count": len(jobs),
+                        "target_job": target_job,
+                        "target_location": target_location,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                }
+            })
+        
+        except Exception as analysis_error:
+            logger.error(f"Analysis failed: {str(analysis_error)}")
+            return JSONResponse(content={
+                "success": True,
+                "data": {
+                    "jobs": jobs,
+                    "analysis_available": False,
+                    "message": "Jobs found but analysis failed"
+                }
+            })
+    
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"❌ Quick job match error: {str(e)}")
+        logger.error(traceback.format_exc())
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": f"Job matching failed: {str(e)}"
+            }
+        )
+
+
+@app.get("/api/jobs/test")
+async def test_job_search():
+    """Test endpoint for job search functionality"""
+    logger.info("Testing job search functionality...")
+    
+    try:
+        if not LINKEDIN_SCRAPER_AVAILABLE:
+            return {
+                "success": False,
+                "error": "LinkedIn job scraper not available",
+                "recommendation": "Install: pip install httpx beautifulsoup4 lxml"
+            }
+        
+        scraper = LinkedInJobScraper()
+        jobs = await scraper.search_jobs(
+            keywords="Software Engineer",
+            location="San Francisco, CA",
+            limit=3
+        )
+        
+        groq_api_key = os.getenv("GROQ_API_KEY")
+        
+        return {
+            "success": True,
+            "message": "Job search is working!",
+            "test_results": {
+                "scraper_working": True,
+                "sample_jobs_found": len(jobs),
+                "groq_api_configured": bool(groq_api_key),
+                "groq_analyzer_available": GROQ_ANALYZER_AVAILABLE,
+                "sample_job_titles": [job.get('title', 'N/A') for job in jobs[:3]]
+            }
+        }
+    
+    except Exception as e:
+        logger.error(f"❌ Test failed: {str(e)}")
+        return {
+            "success": False,
+            "error": str(e),
+            "details": traceback.format_exc()
+        }
+
+
+# ============================================================================
+# END OF JOB SEARCH ENDPOINTS
+# ============================================================================
 
 
 if __name__ == '__main__':

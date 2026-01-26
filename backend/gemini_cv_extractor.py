@@ -26,12 +26,12 @@ class GeminiCVExtractor:
             api_key: Google API key (if not provided, will look for GOOGLE_API_KEY env var)
         """
         self.groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-        self.api_key = api_key or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
-        if not self.api_key:
-            raise ValueError("Google API key is required. Set GOOGLE_API_KEY or GEMINI_API_KEY environment variable.")
+        #self.api_key = api_key or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+        # if not self.api_key:
+        #     raise ValueError("Google API key is required. Set GOOGLE_API_KEY or GEMINI_API_KEY environment variable.")
         
         # Configure Gemini
-        genai.configure(api_key=self.api_key)
+        # genai.configure(api_key=self.api_key)
         
         # Use Gemini 1.5 Flash with relaxed safety settings
         safety_settings = [
@@ -53,14 +53,14 @@ class GeminiCVExtractor:
             },
         ]
         self.groq_model = "openai/gpt-oss-120b"
-        self.model = genai.GenerativeModel(
-            'gemini-3-flash-preview',
-            generation_config={
-                "response_mime_type": "application/json",
-                "temperature": 0.1
-            },
-            safety_settings=safety_settings
-        )
+        # self.model = genai.GenerativeModel(
+        #     'gemini-3-flash-preview',
+        #     generation_config={
+        #         "response_mime_type": "application/json",
+        #         "temperature": 0.1
+        #     },
+        #     safety_settings=safety_settings
+        # )
     
     def extract_cv_info(self, raw_text: str) -> Dict[str, Any]:
         """
@@ -89,7 +89,7 @@ class GeminiCVExtractor:
                     }
                 ],
                 model=self.groq_model,
-                temperature=1,  # Very low temperature for consistent JSON
+                temperature=0.1,  # Very low temperature for consistent JSON
                 max_tokens=4096,
                 response_format={"type": "json_object"}  # Force JSON response
             ).choices[0].message.content

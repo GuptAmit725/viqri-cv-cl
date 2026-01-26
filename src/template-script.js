@@ -556,3 +556,225 @@ console.log('📄 Template Page Ready!');
 console.log('Template Data:', templateData);
 console.log('CV Data:', cvData);
 console.log('Job Details:', jobDetails);
+
+// ============================================================================
+// JOB MATCHING FUNCTIONALITY
+// ============================================================================
+
+const API_BASE_URL = 'http://localhost:8000';
+let currentJobs = [];
+let currentInsights = null;
+
+function initJobMatching() {
+    console.log('🎯 Initializing job matching...');
+    
+    const searchJobsBtn = document.getElementById('searchJobsBtn');
+    const refreshJobsBtn = document.getElementById('refreshJobsBtn');
+    const retryJobsBtn = document.getElementById('retryJobsBtn');
+    
+    if (searchJobsBtn) searchJobsBtn.addEventListener('click', searchForJobs);
+    if (refreshJobsBtn) refreshJobsBtn.addEventListener('click', searchForJobs);
+    if (retryJobsBtn) retryJobsBtn.addEventListener('click', searchForJobs);
+    
+    console.log('✅ Job matching initialized');
+}
+
+async function searchForJobs() {
+    console.log('🔍 Searching for jobs...');
+    
+    const targetJob = jobDetails?.target_job || localStorage.getItem('targetJob') || '';
+    const targetLocation = jobDetails?.target_location || localStorage.getItem('targetLocation') || '';
+    const experienceLevel = jobDetails?.experience_level || localStorage.getItem('experienceLevel') || '';
+    
+    if (!cvData || Object.keys(cvData).length === 0) {
+        showJobError('No CV data found. Please upload your CV first.');
+        return;
+    }
+    
+    if (!targetJob || !targetLocation) {
+        showJobError('Job title and location are required. Please go back and fill in the details.');
+        return;
+    }
+    
+    showJobLoading();
+    
+    try {
+        console.log('📡 Calling job matching API...');
+        const response = await fetch(`${API_BASE_URL}/api/match-jobs`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                cv_data: cvData,
+                job_title: targetJob,
+                location: targetLocation,
+                experience_level: experienceLevel
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to fetch jobs');
+        }
+        
+        const data = await response.json();
+        console.log('✅ Jobs received:', data);
+        
+        if (data.success && data.jobs && data.jobs.length > 0) {
+            currentJobs = data.jobs;
+            currentInsights = data.insights;
+            displayJobs(data.jobs, data.insights);
+        } else {
+            showJobError(data.message || 'No jobs found matching your criteria.');
+        }
+        
+    } catch (error) {
+        console.error('❌ Job search error:', error);
+        showJobError(error.message || 'Failed to search for jobs. Please try again.');
+    }
+}
+
+function showJobLoading() {
+    document.getElementById('jobInitialState').style.display = 'none';
+    document.getElementById('jobErrorState').style.display = 'none';
+    document.getElementById('jobsContainer').style.display = 'none';
+    document.getElementById('jobLoadingState').style.display = 'block';
+}
+
+function showJobError(message) {
+    document.getElementById('jobInitialState').style.display = 'none';
+    document.getElementById('jobLoadingState').style.display = 'none';
+    document.getElementById('jobsContainer').style.display = 'none';
+    document.getElementById('jobErrorState').style.display = 'block';
+    document.getElementById('jobErrorMessage').textContent = message;
+}
+
+function displayJobs(jobs, insights) {
+    console.log('📋 Displaying jobs:', jobs.length);
+    
+    document.getElementById('jobInitialState').style.display = 'none';
+    document.getElementById('jobLoadingState').style.display = 'none';
+    document.getElementById('jobErrorState').style.display = 'none';
+    document.getElementById('jobsContainer').style.display = 'block';
+    
+    document.getElementById('jobsFoundText').textContent = `Found ${jobs.length} matching opportunities`;
+    
+    const jobsGrid = document.getElementById('jobsGrid');
+    jobsGrid.innerHTML = '';
+    
+    jobs.forEach((job, index) => {
+        const jobCard = createJobCard(job, index + 1);
+        jobsGrid.appendChild(jobCard);
+    });
+    
+    if (insights) displayInsights(insights);
+    
+    document.getElementById('matching-jobs').scrollIntoView({ behavior: 'smooth' });
+}
+
+function createJobCard(job, rank) {
+    const card = document.createElement('div');
+    card.className = 'job-card';
+    
+    const score = job.match_score || 0;
+    let scoreClass = 'match-low';
+    if (score >= 80) scoreClass = 'match-high';
+    else if (score >= 60) scoreClass = 'match-medium';
+    
+    card.innerHTML = `
+        <div class="job-card-header">
+            <div class="job-rank">#${rank}</div>
+            <div class="job-match-score ${scoreClass}">
+                <span class="score-value">${score}%</span>
+                <span class="score-label">Match</span>
+            </div>
+        </div>
+        
+        <h3 class="job-title">${job.title}</h3>
+        <div class="job-company">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            ${job.company}
+        </div>
+        <div class="job-location">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            ${job.location}
+        </div>
+        
+        ${job.summary ? `<p class="job-summary">${job.summary}</p>` : ''}
+        
+        ${job.fit_reason ? `
+        <div class="job-fit-reason">
+            <strong>Why it's a good fit:</strong> ${job.fit_reason}
+        </div>
+        ` : ''}
+        
+        ${job.skills_to_highlight && job.skills_to_highlight.length > 0 ? `
+        <div class="job-skills-highlight">
+            <strong>Highlight these skills:</strong>
+            <div class="skills-tags">
+                ${job.skills_to_highlight.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+            </div>
+        </div>
+        ` : ''}
+        
+        <div class="job-card-footer">
+            <span class="job-posted">${job.posted_date || 'Recently'}</span>
+            <a href="${job.url}" target="_blank" rel="noopener noreferrer" class="btn-apply">
+                Apply on LinkedIn
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+            </a>
+        </div>
+    `;
+    
+    return card;
+}
+
+function displayInsights(insights) {
+    const insightsContent = document.getElementById('insightsContent');
+    
+    insightsContent.innerHTML = `
+        <div class="insight-item">
+            <h4>📊 Match Quality</h4>
+            <p class="insight-highlight">${insights.match_quality || 'Good'}</p>
+            <p>Average match score: <strong>${insights.average_match_score || 65}%</strong></p>
+        </div>
+        
+        ${insights.recommendations && insights.recommendations.length > 0 ? `
+        <div class="insight-item">
+            <h4>💡 Recommendations</h4>
+            <ul class="insight-list">
+                ${insights.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+            </ul>
+        </div>
+        ` : ''}
+        
+        ${insights.action_items && insights.action_items.length > 0 ? `
+        <div class="insight-item">
+            <h4>✅ Action Items</h4>
+            <ul class="insight-list action-list">
+                ${insights.action_items.map(action => `<li>${action}</li>`).join('')}
+            </ul>
+        </div>
+        ` : ''}
+        
+        ${insights.skills_in_demand && insights.skills_in_demand.length > 0 ? `
+        <div class="insight-item">
+            <h4>🔥 Skills in Demand</h4>
+            <div class="skills-tags">
+                ${insights.skills_in_demand.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+            </div>
+        </div>
+        ` : ''}
+    `;
+}
+
+initJobMatching();

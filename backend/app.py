@@ -10,6 +10,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import logging
 import traceback
+import httpx
 import sys
 
 # Configure logging for Cloud Run

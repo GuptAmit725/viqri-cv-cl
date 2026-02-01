@@ -171,7 +171,7 @@ class GeminiCVExtractor:
             
         except Exception as e:
             logger.error("="*60)
-            logger.error(f"❌ ERROR IN GEMINI EXTRACTION")
+            logger.error(f"❌ ERROR IN GEMINI EXTRACTION : {e}")
             logger.error("="*60)
             logger.error(f"Error type: {type(e).__name__}")
             logger.error(f"Error message: {str(e)}")

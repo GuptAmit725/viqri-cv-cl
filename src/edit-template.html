@@ -3,7 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <title>Edit Your CV Template - Viqri CV</title>
+    <!-- Route Protection -->
+    <script>
+        (function() {
+            const cvData = localStorage.getItem('cvData');
+            if (!cvData || cvData === '{}' || cvData === 'null') {
+                alert('Please upload your CV first to access this page.');
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="template-styles.css">
     <link rel="stylesheet" href="edit-template-styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">

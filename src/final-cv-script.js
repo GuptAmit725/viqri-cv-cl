@@ -4,6 +4,16 @@ let jobDetails = null;
 
 init();
 
+// Route Protection - Must have CV data to access this page
+(function() {
+    const cvData = localStorage.getItem('cvData');
+    if (!cvData || cvData === '{}' || cvData === 'null') {
+        alert('Please upload your CV first to access this page.');
+        window.location.href = 'index.html';
+        throw new Error('CV data required');
+    }
+})();
+
 function init() {
     loadData();
     generateCV();

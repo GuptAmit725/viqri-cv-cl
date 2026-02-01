@@ -3,7 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <title>Create GitHub Portfolio - Viqri CV</title>
+    <!-- Route Protection -->
+    <script>
+        (function() {
+            const cvData = localStorage.getItem('cvData');
+            if (!cvData || cvData === '{}' || cvData === 'null') {
+                alert('Please upload your CV first to access this page.');
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="template-styles.css">
     <link rel="stylesheet" href="portfolio-wizard-styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -138,6 +149,16 @@
                                 <li>Scroll down and click <strong>"Generate token"</strong></li>
                                 <li>Copy the token (it starts with <code>ghp_</code>)</li>
                                 <li>Paste it in the field above</li>
+                                <li>REMEMBER to enable pages on your github repository.</li>
+                                    Do these steps to enable GitHub pages:
+                                    <ul>
+                                        <li>✓ <strong>Go to the newly created repository.</strong></li>
+                                        <li>✓ Then<strong> Settings</strong> Towards right.</li>
+                                        <li>✓ Then<strong> Pages</strong> Towards bottom-left.</li>
+                                        <li>✓ Then<strong> Build and deployment</strong> select: Deploy from a branch.</li>
+                                        <li>✓ Then<strong> Save</strong></li>
+                                        <li>✓ Wait for 2-3 minutes.</li>^
+                                    </ul>
                             </ol>
                             <div class="warning-box">
                                 <strong>⚠️ Important:</strong> Save your token somewhere safe! GitHub won't show it again.
@@ -202,6 +223,7 @@
                         <div class="url-preview">
                             <code id="portfolioUrlPreview">https://username.github.io</code>
                         </div>
+                        
                     </div>
 
                     <div class="button-group">
@@ -303,6 +325,18 @@
                             <div class="info-box">
                                 <p><strong>📝 Note:</strong> It may take 2-3 minutes for GitHub Pages to publish your site. 
                                 If you see a 404 error, please wait a moment and refresh.</p>
+                            </div>
+                            <div class="info-box">
+                                If you are still getting 404 error after deployment, please check if GitHub pages is enabled in your repository settings.
+                                Do these steps to enable GitHub pages:
+                                    <ul>
+                                        <li>✓ <strong>Go to the newly created repository.</strong></li>
+                                        <li>✓ Then<strong> Settings</strong> Towards right.</li>
+                                        <li>✓ Then<strong> Pages</strong> Towards bottom-left.</li>
+                                        <li>✓ Then<strong> Build and deployment</strong> select: Deploy from a branch.</li>
+                                        <li>✓ Then<strong> Save</strong></li>
+                                        <li>✓ Wait for 2-3 minutes.</li>
+                                    </ul>
                             </div>
 
                             <div class="button-group">

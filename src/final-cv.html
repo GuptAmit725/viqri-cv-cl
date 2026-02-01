@@ -3,7 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <title>Your Final CV - Viqri CV</title>
+    
+    <!-- Route Protection -->
+    <script>
+        (function() {
+            const cvData = localStorage.getItem('cvData');
+            if (!cvData || cvData === '{}' || cvData === 'null') {
+                alert('Please upload your CV first to access this page.');
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+    
     <link rel="stylesheet" href="template-styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,7 +48,7 @@
         }
         
         @media print {
-            .print-actions {
+            .print-actions, .qr-banner {
                 display: none !important;
             }
             .cv-container {
@@ -110,7 +123,6 @@
             text-align: justify;
         }
         
-        /* Two-column layout for skills */
         .two-column-layout {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -166,7 +178,6 @@
             font-size: 9.5pt;
         }
         
-        /* Compact skills layout */
         .cv-skill-category {
             margin-bottom: 0.5rem;
         }
@@ -197,7 +208,6 @@
             display: inline-block;
         }
         
-        /* Compact project and cert layout */
         .compact-list {
             margin-bottom: 0.4rem;
         }
@@ -237,6 +247,20 @@
         </button>
     </div>
 
+    <!-- QR Code Banner -->
+    <div class="qr-banner" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; margin: 40px auto; max-width: 800px; border-radius: 16px; text-align: center; color: white;">
+        <h3 style="margin: 0 0 12px 0; font-size: 24px; font-weight: 700;">📱 Stay Updated on Job Openings</h3>
+        <p style="margin: 0 0 24px 0; opacity: 0.9; font-size: 16px;">Scan to download our app and get instant notifications for jobs matching your profile</p>
+        
+        <div style="background: white; padding: 20px; border-radius: 12px; display: inline-block; margin-bottom: 16px;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://play.google.com/store/apps/details?id=com.viqri.cv" 
+                 alt="Download App" 
+                 style="width: 200px; height: 200px; display: block;">
+        </div>
+        
+        <p style="margin: 0; font-size: 14px; opacity: 0.8;">📲 Point your camera at the QR code to install</p>
+    </div>
+
     <div class="cv-container" id="cvContainer">
         <!-- CV content will be generated here -->
     </div>
@@ -244,7 +268,6 @@
     <!-- PDF Generation Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
     <script src="final-cv-script.js"></script>
 </body>
 </html>

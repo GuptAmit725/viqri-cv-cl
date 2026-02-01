@@ -47,7 +47,7 @@ const elements = {
 };
 
 // API Configuration
-const API_URL = 'https://viqri-cv-api-5u7hdc64va-uc.a.run.app';
+const API_URL =  'https://viqri-cv-api-5u7hdc64va-uc.a.run.app';
 
 // ============================================
 // Initialization

@@ -285,7 +285,7 @@ async function downloadPDF() {
         // Generate canvas from HTML
         console.log('📸 Capturing CV as image...');
         const canvas = await html2canvas(cvContainer, {
-            scale: 2,
+            scale: 1.5,
             useCORS: true,
             logging: false,
             backgroundColor: '#ffffff',
@@ -314,8 +314,8 @@ async function downloadPDF() {
         let position = 0;
         
         // Add image to PDF (handle multiple pages if needed)
-        const imgData = canvas.toDataURL('image/png');
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        const imgData = canvas.toDataURL('image/jpg', 0.85);
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
         heightLeft -= pageHeight;
         
         // Add extra pages if content is longer

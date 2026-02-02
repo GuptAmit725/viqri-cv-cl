@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Viqri CV</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%23a855f7'/><stop offset='100%25' style='stop-color:%23ec4899'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='70' font-weight='700' fill='white' text-anchor='middle' font-family='Arial'>V</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .about-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .about-header {
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            padding: 60px 40px;
+            text-align: center;
+            color: white;
+        }
+        .about-header h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        .about-header p {
+            font-size: 20px;
+            opacity: 0.9;
+        }
+        .about-content {
+            padding: 60px 40px;
+        }
+        .about-section {
+            margin-bottom: 48px;
+        }
+        .about-section h2 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        .about-section p {
+            font-size: 18px;
+            line-height: 1.8;
+            color: #4b5563;
+            margin-bottom: 16px;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-top: 32px;
+        }
+        .feature-card {
+            background: #f9fafb;
+            padding: 32px;
+            border-radius: 16px;
+            text-align: center;
+        }
+        .feature-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        .feature-card h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 12px;
+        }
+        .feature-card p {
+            font-size: 16px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        .stats-section {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 48px;
+            border-radius: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 32px;
+            text-align: center;
+            margin: 48px 0;
+        }
+        .stat-item {
+            color: white;
+        }
+        .stat-number {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .stat-label {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .team-section {
+            text-align: center;
+            margin-top: 48px;
+        }
+        .team-member {
+            display: inline-block;
+            margin: 20px;
+            text-align: center;
+        }
+        .team-avatar {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            font-weight: 700;
+            margin: 0 auto 16px;
+        }
+        .team-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        .team-role {
+            font-size: 16px;
+            color: #6b7280;
+        }
+        .cta-section {
+            background: #f9fafb;
+            padding: 48px;
+            border-radius: 20px;
+            text-align: center;
+            margin-top: 48px;
+        }
+        .cta-section h2 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+        .cta-button {
+            display: inline-block;
+            padding: 16px 40px;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 24px;
+            transition: transform 0.2s;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+        .back-link {
+            display: inline-block;
+            margin: 32px 0;
+            color: #a855f7;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        @media (max-width: 768px) {
+            .about-header {
+                padding: 40px 24px;
+            }
+            .about-header h1 {
+                font-size: 32px;
+            }
+            .about-content {
+                padding: 40px 24px;
+            }
+            .stats-section {
+                padding: 32px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="about-container">
+        <div class="about-header">
+            <h1>About Viqri CV</h1>
+            <p>Transforming Career Stories with AI</p>
+        </div>
+
+        <div class="about-content">
+            <a href="index.html" class="back-link">← Back to Home</a>
+
+            <div class="about-section">
+                <h2>Our Mission</h2>
+                <p>At Viqri CV, we believe everyone deserves a chance to showcase their best professional self. Our mission is to democratize access to professional CV optimization using cutting-edge AI technology, helping job seekers land their dream roles regardless of their background or resources.</p>
+                <p>We're committed to making the job application process more efficient, less stressful, and more successful for millions of professionals worldwide.</p>
+            </div>
+
+            <div class="about-section">
+                <h2>What We Do</h2>
+                <p>Viqri CV is an AI-powered CV optimization platform that analyzes your resume and provides personalized recommendations to help you stand out in today's competitive job market.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>AI Analysis</h3>
+                    <p>Advanced AI models analyze your CV to extract key information and identify areas for improvement.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Personalized Templates</h3>
+                    <p>Get customized CV templates optimized for your target role, industry, and location.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💼</div>
+                    <h3>Job Matching</h3>
+                    <p>Discover relevant job opportunities that match your skills and experience.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Portfolio Generation</h3>
+                    <p>Create stunning GitHub portfolio websites in 60 seconds with one click.</p>
+                </div>
+            </div>
+
+            <div class="stats-section">
+                <div class="stat-item">
+                    <div class="stat-number">10K+</div>
+                    <div class="stat-label">CVs Optimized</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">50+</div>
+                    <div class="stat-label">Countries</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Available</div>
+                </div>
+            </div>
+
+            <div class="about-section">
+                <h2>Our Story</h2>
+                <p>Viqri CV was born from a simple observation: talented professionals were being overlooked because their CVs didn't effectively communicate their value. Traditional CV writing services were expensive and time-consuming, making them inaccessible to many job seekers.</p>
+                <p>We set out to solve this problem by combining the power of AI with years of recruitment expertise. Our platform analyzes thousands of successful CVs to understand what works, then applies that knowledge to help you craft your perfect professional story.</p>
+                <p>Today, we're proud to serve job seekers across the globe, helping them land interviews at top companies and advance their careers.</p>
+            </div>
+
+            <div class="about-section">
+                <h2>Our Technology</h2>
+                <p>We leverage state-of-the-art AI models from leading providers:</p>
+                <ul style="list-style: none; padding: 0; margin-top: 20px;">
+                    <li style="margin-bottom: 12px; font-size: 18px; color: #4b5563;">✓ <strong>Groq AI</strong> - Lightning-fast CV analysis and job matching</li>
+                    <li style="margin-bottom: 12px; font-size: 18px; color: #4b5563;">✓ <strong>Google Cloud</strong> - Reliable, secure infrastructure</li>
+                    <li style="margin-bottom: 12px; font-size: 18px; color: #4b5563;">✓ <strong>GitHub Integration</strong> - Automated portfolio deployment</li>
+                    <li style="margin-bottom: 12px; font-size: 18px; color: #4b5563;">✓ <strong>Advanced NLP</strong> - Intelligent content extraction</li>
+                </ul>
+            </div>
+
+            <div class="about-section">
+                <h2>Why Choose Viqri CV?</h2>
+                <div style="margin-top: 24px;">
+                    <div style="margin-bottom: 20px;">
+                        <strong style="font-size: 20px; color: #1f2937;">⚡ Fast & Easy</strong>
+                        <p style="margin-top: 8px;">Get professional CV recommendations in minutes, not hours or days.</p>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <strong style="font-size: 20px; color: #1f2937;">🎯 Personalized</strong>
+                        <p style="margin-top: 8px;">Every recommendation is tailored to your target role, industry, and location.</p>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <strong style="font-size: 20px; color: #1f2937;">💰 Affordable</strong>
+                        <p style="margin-top: 8px;">Free core features with premium options for advanced users.</p>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <strong style="font-size: 20px; color: #1f2937;">🔒 Secure</strong>
+                        <p style="margin-top: 8px;">Your data is encrypted and deleted after processing. We respect your privacy.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="team-section">
+                <h2 style="margin-bottom: 32px;">Meet the Team</h2>
+                <div class="team-member">
+                    <div class="team-avatar">AM</div>
+                    <div class="team-name">Amit Gupta</div>
+                    <div class="team-role">Founder & CEO</div>
+                </div>
+            </div>
+
+            <div class="cta-section">
+                <h2>Ready to Transform Your Career?</h2>
+                <p style="font-size: 18px; color: #6b7280; margin-top: 16px;">Join thousands of professionals who've upgraded their CVs with Viqri.</p>
+                <a href="index.html" class="cta-button">Get Started Free</a>
+            </div>
+
+            <div style="text-align: center; margin-top: 48px; padding-top: 32px; border-top: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; margin-bottom: 16px;">Have questions? We'd love to hear from you.</p>
+                <a href="contact.html" style="color: #a855f7; text-decoration: none; font-weight: 500;">Contact Us →</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

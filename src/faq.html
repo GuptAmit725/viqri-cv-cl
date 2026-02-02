@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - Viqri CV</title>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2892129066054550"
+     crossorigin="anonymous"></script>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%23a855f7'/><stop offset='100%25' style='stop-color:%23ec4899'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='72' font-size='70' font-weight='700' fill='white' text-anchor='middle' font-family='Arial'>V</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f9fafb;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .faq-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .faq-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        .faq-header h1 {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .faq-header p {
+            font-size: 20px;
+            color: #6b7280;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 32px;
+            color: #a855f7;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .back-link:hover {
+            color: #ec4899;
+        }
+        .faq-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 48px;
+        }
+        .category-btn {
+            padding: 16px 24px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .category-btn:hover {
+            border-color: #a855f7;
+            color: #a855f7;
+        }
+        .category-btn.active {
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            color: white;
+            border-color: transparent;
+        }
+        .faq-list {
+            margin-bottom: 40px;
+        }
+        .faq-category-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .faq-item {
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .faq-question {
+            width: 100%;
+            padding: 24px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: color 0.2s;
+        }
+        .faq-question:hover {
+            color: #a855f7;
+        }
+        .faq-icon {
+            font-size: 24px;
+            transition: transform 0.3s;
+        }
+        .faq-item.active .faq-icon {
+            transform: rotate(45deg);
+        }
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .faq-answer-content {
+            padding: 0 24px 24px;
+            font-size: 16px;
+            line-height: 1.7;
+            color: #6b7280;
+        }
+        .faq-item.active .faq-answer {
+            max-height: 1000px;
+        }
+        .cta-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 48px;
+            border-radius: 20px;
+            text-align: center;
+            margin-top: 60px;
+        }
+        .cta-box h2 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        .cta-box p {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 24px;
+        }
+        .cta-button {
+            display: inline-block;
+            padding: 14px 32px;
+            background: white;
+            color: #764ba2;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+        @media (max-width: 768px) {
+            .faq-header h1 {
+                font-size: 36px;
+            }
+            .faq-categories {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="faq-container">
+        <a href="index.html" class="back-link">← Back to Home</a>
+        
+        <div class="faq-header">
+            <h1>Frequently Asked Questions</h1>
+            <p>Everything you need to know about Viqri CV</p>
+        </div>
+
+        <div class="faq-list">
+            <h2 class="faq-category-title">🚀 Getting Started</h2>
+            
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>What is Viqri CV?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Viqri CV is an AI-powered CV optimization platform that helps you create a professional, ATS-friendly resume tailored to your target job role and location. Our advanced AI analyzes your CV and provides personalized recommendations to help you stand out from other candidates.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>How does Viqri CV work?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Simply upload your CV, enter your target job title and location, and our AI will analyze your resume. Within minutes, you'll receive an optimized CV template with personalized recommendations, job matching suggestions, and the option to generate a professional portfolio website.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Is Viqri CV free to use?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes! The core features of Viqri CV are completely free. You can upload your CV, get AI-powered recommendations, download your optimized resume, and even generate a GitHub portfolio website—all at no cost.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-list">
+            <h2 class="faq-category-title">📄 CV Upload & Processing</h2>
+            
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>What file formats can I upload?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        We support PDF, DOC, and DOCX file formats. Your CV should be under 10MB. Make sure your file is not password-protected for smooth processing.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Is my CV data secure?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Absolutely. Your privacy is our top priority. All data is encrypted during transmission using HTTPS. Your uploaded CV is processed on secure servers and automatically deleted within 24 hours. We never share your personal information with third parties without your explicit consent.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>How long does CV processing take?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Our AI typically processes your CV in 1-2 minutes. However, during peak times, it may take up to 5 minutes. You'll see real-time progress updates throughout the process.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Can I upload my CV multiple times?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes! You can upload and optimize your CV as many times as you want. We recommend re-uploading if you make significant changes or when applying for different types of roles.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-list">
+            <h2 class="faq-category-title">🎯 CV Optimization</h2>
+            
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>What is ATS optimization?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        ATS (Applicant Tracking System) is software used by companies to filter CVs before humans review them. Our AI ensures your CV is formatted correctly, uses relevant keywords, and follows best practices to pass ATS screening and reach hiring managers.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>How does AI personalize my CV recommendations?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Our AI analyzes your CV content, target job title, desired location, and industry trends. It then provides specific recommendations on how to highlight relevant skills, reframe achievements, and structure your CV to match what employers in your target field are looking for.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Can I edit the optimized CV?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes! After receiving your optimized CV, you can edit any section directly on our platform. All changes are saved in your browser, so you can refine your CV until it's perfect.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-list">
+            <h2 class="faq-category-title">🚀 Portfolio Generation</h2>
+            
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>What is the portfolio generator?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Our portfolio generator automatically creates a professional website hosted on GitHub Pages (yourname.github.io) using your CV data. It's perfect for showcasing your work to employers and includes your experience, skills, projects, and contact information.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Do I need to know coding to create a portfolio?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Not at all! Our portfolio generator is completely code-free. Just click "Create Portfolio," authorize with GitHub (free account required), and we'll build and deploy your website automatically. It takes about 60 seconds.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Is the portfolio free to host?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes! GitHub Pages provides free hosting forever. Your portfolio will be live at yourname.github.io with no hosting fees, no expiration, and no hidden costs.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-list">
+            <h2 class="faq-category-title">💼 Job Matching</h2>
+            
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>How does job matching work?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Our AI compares your skills, experience, and target role against live job postings. We search LinkedIn and other job boards to find opportunities that match your profile, then rank them by compatibility. You'll see match scores, required skills, and job details.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Can I get job alerts?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes! After generating your CV, you can opt in to receive notifications about new job openings that match your profile. Simply scan the QR code to download our mobile app and enable push notifications.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-list">
+            <h2 class="faq-category-title">🔧 Technical Support</h2>
+            
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>What if the AI doesn't extract my data correctly?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Our AI is highly accurate, but if something isn't extracted correctly, you can edit it manually in the template editor. Make sure your original CV has clear headings and formatting for best results.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Which browsers are supported?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Viqri CV works on all modern browsers: Chrome, Firefox, Safari, and Edge. We recommend using the latest version for the best experience. Mobile browsers are also fully supported.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>I'm having technical issues. How can I get help?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Please contact us at support@mysanvi.in or use our <a href="contact.html" style="color: #a855f7;">contact form</a>. We typically respond within 24 hours. Include details about the issue and screenshots if possible.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cta-box">
+            <h2>Still Have Questions?</h2>
+            <p>Can't find the answer you're looking for? We're here to help!</p>
+            <a href="contact.html" class="cta-button">Contact Support</a>
+        </div>
+    </div>
+
+    <script>
+        // FAQ accordion functionality
+        const faqItems = document.querySelectorAll('.faq-item');
+        
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            
+            question.addEventListener('click', () => {
+                // Close other items
+                faqItems.forEach(otherItem => {
+                    if (otherItem !== item) {
+                        otherItem.classList.remove('active');
+                    }
+                });
+                
+                // Toggle current item
+                item.classList.toggle('active');
+            });
+        });
+    </script>
+</body>
+</html>

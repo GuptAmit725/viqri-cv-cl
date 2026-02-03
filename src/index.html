@@ -471,6 +471,22 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ── Live Rating Badge (populated by script.js on load) ── -->
+            <div id="ratingBadge" style="display:none; background:rgba(255,255,255,0.12);
+                 backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.25);
+                 border-radius:20px; padding:28px 36px; text-align:center;">
+              <div style="color:rgba(255,255,255,0.8); font-size:14px; text-transform:uppercase;
+                   letter-spacing:1.5px; font-weight:600; margin-bottom:10px;">User Rating</div>
+              <div style="display:flex; align-items:center; justify-content:center; gap:14px;">
+                <span id="ratingAvg" style="color:#fbbf24; font-size:52px; font-weight:800; line-height:1;">0</span>
+                <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
+                  <span id="ratingStars" style="font-size:22px; letter-spacing:2px; color:#fbbf24;">☆☆☆☆☆</span>
+                  <span id="ratingCount" style="color:rgba(255,255,255,0.7); font-size:14px;">No reviews yet</span>
+                </div>
+              </div>
+            </div>
+
         </div>
     </section>
 

@@ -3,6 +3,94 @@
 // Configuration
 const API_BASE_URL = 'https://viqri-cv-api-5u7hdc64va-uc.a.run.app';  // Update with your API URL
 
+// ============================================
+// Feedback & Rating  (writes go to Firestore via the backend)
+// ============================================
+const Feedback = {
+  _resolve: null,
+  _selected: 0,
+
+  /** Show the modal; returns a promise that resolves when the user is done */
+  prompt() {
+    return new Promise(resolve => {
+      this._resolve = resolve;
+      this._selected = 0;
+      this._render();
+      document.getElementById('feedbackModal').style.display = 'flex';
+    });
+  },
+
+  /** Build the 5 star buttons */
+  _render() {
+    const row = document.getElementById('fbStarRow');
+    if (!row) return;
+    row.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+      const s = document.createElement('span');
+      s.className = 'fb-star';
+      s.textContent = '☆';
+      s.dataset.val = i;
+      s.onclick = () => this._pick(i);
+      row.appendChild(s);
+    }
+    const ta = document.getElementById('fbTextarea');
+    if (ta) ta.value = '';
+    this._setLabel('Tap a star to rate');
+  },
+
+  _pick(n) {
+    this._selected = n;
+    document.querySelectorAll('#fbStarRow .fb-star').forEach((s, idx) => {
+      s.textContent = idx < n ? '★' : '☆';
+    });
+    const labels = ['', 'Awful', 'Bad', 'Okay', 'Good', 'Loved it!'];
+    this._setLabel(labels[n]);
+  },
+
+  _setLabel(txt) {
+    const el = document.getElementById('fbRatingLabel');
+    if (el) { el.textContent = txt; el.style.color = '#9ca3af'; }
+  },
+
+  /** User clicked "Submit & Deploy" */
+  async submit() {
+    if (!this._selected) {
+      const el = document.getElementById('fbRatingLabel');
+      if (el) { el.textContent = '⚠️ Please pick a star first'; el.style.color = '#ef4444'; }
+      return;
+    }
+    const text = (document.getElementById('fbTextarea') || {}).value || '';
+    this._post(this._selected, text);   // fire-and-forget — don't block deploy
+    this._close();
+  },
+
+  /** User clicked "Skip" */
+  skip() { this._close(); },
+
+  _close() {
+    document.getElementById('feedbackModal').style.display = 'none';
+    if (this._resolve) { this._resolve(); this._resolve = null; }
+  },
+
+  /** POST to backend — best-effort, never throws to the caller */
+  async _post(rating, text) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating, text })
+      });
+      if (res.ok) {
+        console.log('✅ Feedback saved to Firestore');
+      } else {
+        console.warn('⚠️ Feedback POST returned', res.status);
+      }
+    } catch (e) {
+      console.warn('⚠️ Feedback POST failed (non-critical):', e);
+    }
+  }
+};
+
 // State Management
 let currentStep = 1;
 let wizardData = {
@@ -363,30 +451,37 @@ function closePreview() {
 
 // Deploy Portfolio
 async function deployPortfolio() {
-    const deployBtn = document.getElementById('deployBtn');
-    const progressDiv = document.getElementById('deploymentProgress');
-    const successDiv = document.getElementById('deploymentSuccess');
-    const statusText = document.getElementById('deploymentStatusText');
-    
-    // Hide button, show progress
-    deployBtn.style.display = 'none';
-    document.querySelector('.deployment-summary').style.display = 'none';
-    document.querySelector('.preview-section').style.display = 'none';
-    document.querySelector('.button-group').style.display = 'none';
-    progressDiv.style.display = 'block';
-    
+    // ── ask for feedback before anything else ──
+    await Feedback.prompt();
+
+    const step4          = document.getElementById('step4');
+    const deployBtn      = document.getElementById('deployBtn');
+    const progressDiv    = document.getElementById('deploymentProgress');
+    const successDiv     = document.getElementById('deploymentSuccess');
+    const statusText     = document.getElementById('deploymentStatusText');
+
+    // Hide button, show progress  — all queries scoped to step4
+    if (deployBtn)   deployBtn.style.display = 'none';
+    const summary    = step4 && step4.querySelector('.deployment-summary');
+    const preview    = step4 && step4.querySelector('.preview-section');
+    const btnGroup   = step4 && step4.querySelector('.button-group');
+    if (summary)     summary.style.display  = 'none';
+    if (preview)     preview.style.display  = 'none';
+    if (btnGroup)    btnGroup.style.display = 'none';
+    if (progressDiv) progressDiv.style.display = 'block';
+
     try {
         // Step 1: Creating repository
-        statusText.textContent = 'Creating GitHub repository...';
+        if (statusText) statusText.textContent = 'Creating GitHub repository...';
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         // Step 2: Generating portfolio
-        statusText.textContent = 'Generating your portfolio...';
+        if (statusText) statusText.textContent = 'Generating your portfolio...';
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         // Step 3: Deploying
-        statusText.textContent = 'Deploying to GitHub Pages...';
-        
+        if (statusText) statusText.textContent = 'Deploying to GitHub Pages...';
+
         const response = await fetch(`${API_BASE_URL}/api/deploy-portfolio`, {
             method: 'POST',
             headers: {
@@ -399,38 +494,44 @@ async function deployPortfolio() {
                 cv_data: wizardData.cvData
             })
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
             // Show success
-            progressDiv.style.display = 'none';
-            successDiv.style.display = 'block';
-            
-            const portfolioUrl = result.data.portfolio_url;
-            document.getElementById('successPortfolioUrl').href = portfolioUrl;
-            document.getElementById('successPortfolioUrl').textContent = portfolioUrl;
-            
+            if (progressDiv) progressDiv.style.display = 'none';
+            if (successDiv)  successDiv.style.display  = 'block';
+
+            // Build URL with safe fallback
+            const portfolioUrl = (result.data && result.data.portfolio_url)
+                || `https://${wizardData.githubUsername}.github.io`;
+
+            const linkEl = document.getElementById('successPortfolioUrl');
+            if (linkEl) {
+                linkEl.href        = portfolioUrl;
+                linkEl.textContent = portfolioUrl;
+            }
+
             // Celebration effect
             celebrate();
-            
+
         } else {
             throw new Error(result.error || 'Deployment failed');
         }
-        
+
     } catch (error) {
         console.error('Deployment error:', error);
-        
-        progressDiv.style.display = 'none';
-        
+
+        if (progressDiv) progressDiv.style.display = 'none';
+
         // Show error
         alert(`Deployment failed: ${error.message}`);
-        
-        // Restore UI
-        deployBtn.style.display = 'flex';
-        document.querySelector('.deployment-summary').style.display = 'block';
-        document.querySelector('.preview-section').style.display = 'block';
-        document.querySelector('.button-group').style.display = 'flex';
+
+        // Restore UI — all scoped to step4
+        if (deployBtn) deployBtn.style.display = 'flex';
+        if (summary)   summary.style.display  = 'block';
+        if (preview)   preview.style.display  = 'block';
+        if (btnGroup)  btnGroup.style.display = 'flex';
     }
 }
 

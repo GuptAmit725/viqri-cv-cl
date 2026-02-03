@@ -603,6 +603,31 @@ function showNotification(message, type = 'info') {
 }
 
 // ============================================
+// Live Rating Badge  (reads from Firestore via backend)
+// ============================================
+async function paintRatingBadge() {
+    try {
+        const res  = await fetch(`${API_URL}/api/feedback/stats`);
+        const json = await res.json();
+        if (!json.success || !json.data || json.data.count === 0) return;  // nothing yet — badge stays hidden
+
+        const { avg, count } = json.data;
+
+        // filled vs empty stars (round avg to nearest 0.5 for visual)
+        const rounded = Math.round(avg * 2) / 2;
+        let starStr   = '';
+        for (let i = 1; i <= 5; i++) starStr += (i <= rounded) ? '★' : '☆';
+
+        document.getElementById('ratingAvg').textContent   = avg.toFixed(1);
+        document.getElementById('ratingStars').textContent  = starStr;
+        document.getElementById('ratingCount').textContent  = `based on ${count} review${count !== 1 ? 's' : ''}`;
+        document.getElementById('ratingBadge').style.display = 'block';
+    } catch (e) {
+        console.warn('Rating badge: fetch failed (non-critical)', e);
+    }
+}
+
+// ============================================
 // Page Load Animation
 // ============================================
 window.addEventListener('load', () => {
@@ -611,6 +636,7 @@ window.addEventListener('load', () => {
     setTimeout(() => {
         document.body.style.opacity = '1';
     }, 100);
+    paintRatingBadge();   // populate the rating badge from the API
 });
 
 // ============================================

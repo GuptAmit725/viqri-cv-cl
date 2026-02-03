@@ -83,6 +83,16 @@ except Exception as e:
     GROQ_JOB_ANALYZER_AVAILABLE = False
     logger.warning(f"⚠️  Groq job analyzer not available: {str(e)}")
 
+# Feedback / Firestore
+logger.info("📦 Importing feedback store (Firestore)...")
+try:
+    from feedback_store import save_feedback, get_feedback_stats
+    FEEDBACK_AVAILABLE = True
+    logger.info("✅ Feedback store available")
+except Exception as e:
+    FEEDBACK_AVAILABLE = False
+    logger.warning(f"⚠️  Feedback store not available: {str(e)}")
+
 app = FastAPI(
     title="Viqri CV API",
     description="CV Upload and Parsing API with Portfolio Generator",
@@ -204,6 +214,12 @@ class JobAnalysisRequest(BaseModel):
     jobs: List[Dict[str, Any]]
     target_job: str
     target_location: str
+
+
+class FeedbackRequest(BaseModel):
+    """Request model for user feedback"""
+    rating: int                        # 1-5
+    text: Optional[str] = ""           # optional free-text
 
 
 def allowed_file(filename: str) -> bool:
@@ -1225,6 +1241,73 @@ async def test_job_search():
 
 # ============================================================================
 # END OF JOB SEARCH ENDPOINTS
+# ============================================================================
+
+
+# ============================================================================
+# FEEDBACK ENDPOINTS
+# ============================================================================
+
+@app.post("/api/feedback")
+async def submit_feedback(request: FeedbackRequest):
+    """
+    Persist one user-feedback entry to Firestore.
+    Called by portfolio-wizard after the user rates & submits.
+    """
+    try:
+        if not FEEDBACK_AVAILABLE:
+            raise HTTPException(
+                status_code=503,
+                detail="Feedback store not available. Ensure feedback_store.py and google-cloud-firestore are installed."
+            )
+
+        if not (1 <= request.rating <= 5):
+            raise HTTPException(status_code=400, detail="rating must be between 1 and 5")
+
+        logger.info(f"💬 Feedback submission: rating={request.rating}")
+        result = await save_feedback(rating=request.rating, text=request.text or "")
+
+        return {
+            "success": True,
+            "message": "Feedback saved",
+            "data": result
+        }
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"❌ Feedback save error: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/feedback/stats")
+async def feedback_stats():
+    """
+    Return the live average rating and total review count.
+    Called by index.html on page-load to paint the rating badge.
+    """
+    try:
+        if not FEEDBACK_AVAILABLE:
+            # Graceful fallback — badge simply won't appear
+            return {"success": False, "error": "Feedback store not configured"}
+
+        stats = await get_feedback_stats()          # { avg, count }
+
+        return {
+            "success": True,
+            "data": stats
+        }
+
+    except Exception as e:
+        logger.error(f"❌ Feedback stats error: {str(e)}")
+        logger.error(traceback.format_exc())
+        # Never crash the page — return empty stats
+        return {"success": False, "error": str(e)}
+
+
+# ============================================================================
+# END OF FEEDBACK ENDPOINTS
 # ============================================================================
 
 

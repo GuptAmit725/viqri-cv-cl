@@ -335,7 +335,7 @@ async def match_jobs(request: JobMatchRequest):
             job_title=request.job_title,
             location=request.location
         )
-        
+        print()
         if not result.get('success'):
             logger.error(f"❌ Job matching failed: {result.get('error')}")
             # Return jobs without matching
